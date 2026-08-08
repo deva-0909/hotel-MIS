@@ -14,6 +14,190 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_records: {
+        Row: {
+          attendance_date: string
+          created_at: string
+          employee_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          attendance_date: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          status: string
+        }
+        Update: {
+          attendance_date?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banquet_events: {
+        Row: {
+          client_name: string
+          covers: number
+          created_at: string
+          event_date: string
+          event_name: string
+          id: string
+          status: string
+          value_amount: number
+          venue_id: string | null
+        }
+        Insert: {
+          client_name: string
+          covers?: number
+          created_at?: string
+          event_date: string
+          event_name: string
+          id?: string
+          status?: string
+          value_amount?: number
+          venue_id?: string | null
+        }
+        Update: {
+          client_name?: string
+          covers?: number
+          created_at?: string
+          event_date?: string
+          event_name?: string
+          id?: string
+          status?: string
+          value_amount?: number
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banquet_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "banquet_venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banquet_venues: {
+        Row: {
+          capacity: number
+          id: string
+          name: string
+        }
+        Insert: {
+          capacity?: number
+          id?: string
+          name: string
+        }
+        Update: {
+          capacity?: number
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      crm_campaigns: {
+        Row: {
+          audience: string
+          channel: string
+          created_at: string
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+        }
+        Insert: {
+          audience: string
+          channel: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+        }
+        Update: {
+          audience?: string
+          channel?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      crm_leads: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          source: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          source?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          source?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      engineering_assets: {
+        Row: {
+          asset_code: string
+          category: string
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          next_service_date: string | null
+          status: string
+        }
+        Insert: {
+          asset_code?: string
+          category: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          next_service_date?: string | null
+          status?: string
+        }
+        Update: {
+          asset_code?: string
+          category?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          next_service_date?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       folio_charges: {
         Row: {
           amount: number
@@ -75,6 +259,8 @@ export type Database = {
           id: string
           id_proof_number: string | null
           id_proof_type: string | null
+          loyalty_points: number
+          loyalty_tier: string | null
           notes: string | null
           phone: string | null
           updated_at: string
@@ -88,6 +274,8 @@ export type Database = {
           id?: string
           id_proof_number?: string | null
           id_proof_type?: string | null
+          loyalty_points?: number
+          loyalty_tier?: string | null
           notes?: string | null
           phone?: string | null
           updated_at?: string
@@ -101,6 +289,8 @@ export type Database = {
           id?: string
           id_proof_number?: string | null
           id_proof_type?: string | null
+          loyalty_points?: number
+          loyalty_tier?: string | null
           notes?: string | null
           phone?: string | null
           updated_at?: string
@@ -114,6 +304,110 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hotel_settings: {
+        Row: {
+          city: string | null
+          corporate_name: string
+          gstin: string | null
+          hotel_name: string
+          id: string
+          region_name: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          corporate_name?: string
+          gstin?: string | null
+          hotel_name?: string
+          id?: string
+          region_name?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          corporate_name?: string
+          gstin?: string | null
+          hotel_name?: string
+          id?: string
+          region_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      housekeeping_tasks: {
+        Row: {
+          attendant: string | null
+          created_at: string
+          id: string
+          priority: string | null
+          room_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attendant?: string | null
+          created_at?: string
+          id?: string
+          priority?: string | null
+          room_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attendant?: string | null
+          created_at?: string
+          id?: string
+          priority?: string | null
+          room_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "housekeeping_tasks_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_employees: {
+        Row: {
+          created_at: string
+          department: string
+          email: string | null
+          employee_code: string
+          full_name: string
+          id: string
+          phone: string | null
+          role_title: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          email?: string | null
+          employee_code?: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string | null
+          employee_code?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       inventory_categories: {
         Row: {
@@ -307,6 +601,86 @@ export type Database = {
           },
         ]
       }
+      laundry_batches: {
+        Row: {
+          created_at: string
+          guest_id: string | null
+          id: string
+          item_count: number
+          room_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          guest_id?: string | null
+          id?: string
+          item_count?: number
+          room_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          guest_id?: string | null
+          id?: string
+          item_count?: number
+          room_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laundry_batches_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laundry_batches_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          leave_type: string
+          start_date: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          leave_type: string
+          start_date: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          start_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_categories: {
         Row: {
           id: string
@@ -327,6 +701,7 @@ export type Database = {
       }
       menu_items: {
         Row: {
+          aggregator_price: number | null
           category_id: string
           created_at: string
           description: string | null
@@ -334,9 +709,12 @@ export type Database = {
           is_available: boolean
           is_veg: boolean
           name: string
+          own_delivery_price: number | null
+          parcel_price: number | null
           price: number
         }
         Insert: {
+          aggregator_price?: number | null
           category_id: string
           created_at?: string
           description?: string | null
@@ -344,9 +722,12 @@ export type Database = {
           is_available?: boolean
           is_veg?: boolean
           name: string
+          own_delivery_price?: number | null
+          parcel_price?: number | null
           price?: number
         }
         Update: {
+          aggregator_price?: number | null
           category_id?: string
           created_at?: string
           description?: string | null
@@ -354,6 +735,8 @@ export type Database = {
           is_available?: boolean
           is_veg?: boolean
           name?: string
+          own_delivery_price?: number | null
+          parcel_price?: number | null
           price?: number
         }
         Relationships: [
@@ -846,6 +1229,75 @@ export type Database = {
           },
         ]
       }
+      spa_bookings: {
+        Row: {
+          created_at: string
+          guest_id: string | null
+          id: string
+          scheduled_at: string
+          service_id: string
+          status: string
+          therapist: string | null
+          walk_in_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          guest_id?: string | null
+          id?: string
+          scheduled_at: string
+          service_id: string
+          status?: string
+          therapist?: string | null
+          walk_in_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          guest_id?: string | null
+          id?: string
+          scheduled_at?: string
+          service_id?: string
+          status?: string
+          therapist?: string | null
+          walk_in_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spa_bookings_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spa_bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "spa_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spa_services: {
+        Row: {
+          duration_minutes: number
+          id: string
+          name: string
+          price: number
+        }
+        Insert: {
+          duration_minutes?: number
+          id?: string
+          name: string
+          price?: number
+        }
+        Update: {
+          duration_minutes?: number
+          id?: string
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -927,6 +1379,125 @@ export type Database = {
         }
         Relationships: []
       }
+      travel_bookings: {
+        Row: {
+          created_at: string
+          guest_id: string | null
+          id: string
+          scheduled_at: string | null
+          service_type: string
+          status: string
+          vehicle_id: string | null
+          vendor: string | null
+          walk_in_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          guest_id?: string | null
+          id?: string
+          scheduled_at?: string | null
+          service_type: string
+          status?: string
+          vehicle_id?: string | null
+          vendor?: string | null
+          walk_in_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          guest_id?: string | null
+          id?: string
+          scheduled_at?: string | null
+          service_type?: string
+          status?: string
+          vehicle_id?: string | null
+          vendor?: string | null
+          walk_in_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_bookings_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_bookings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "travel_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      travel_vehicles: {
+        Row: {
+          id: string
+          name: string
+          status: string
+          vehicle_type: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          status?: string
+          vehicle_type: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          status?: string
+          vehicle_type?: string
+        }
+        Relationships: []
+      }
+      work_orders: {
+        Row: {
+          asset_id: string | null
+          assigned_to: string | null
+          created_at: string
+          id: string
+          issue: string
+          location: string
+          priority: string
+          status: string
+          updated_at: string
+          wo_number: string
+        }
+        Insert: {
+          asset_id?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          id?: string
+          issue: string
+          location: string
+          priority?: string
+          status?: string
+          updated_at?: string
+          wo_number?: string
+        }
+        Update: {
+          asset_id?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          id?: string
+          issue?: string
+          location?: string
+          priority?: string
+          status?: string
+          updated_at?: string
+          wo_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "engineering_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -936,7 +1507,7 @@ export type Database = {
         Args: { p_reservation_id: string; p_staff_id: string }
         Returns: string
       }
-      is_staff: { Args: Record<string, never>; Returns: boolean }
+      is_staff: { Args: never; Returns: boolean }
       next_doc_number: {
         Args: { prefix: string; seq_name: string }
         Returns: string
@@ -979,6 +1550,9 @@ export type Database = {
         | "partially_received"
         | "received"
         | "cancelled"
+        | "pending_approval"
+        | "approved"
+        | "rejected"
       reservation_status:
         | "confirmed"
         | "checked_in"
@@ -1001,6 +1575,12 @@ export type Database = {
         | "housekeeping"
         | "inventory_manager"
         | "accountant"
+        | "engineering"
+        | "hr"
+        | "crm_marketing"
+        | "banquet"
+        | "spa_laundry"
+        | "travel_desk"
       stock_movement_type:
         | "purchase_receipt"
         | "consumption"
@@ -1165,6 +1745,9 @@ export const Constants = {
         "partially_received",
         "received",
         "cancelled",
+        "pending_approval",
+        "approved",
+        "rejected",
       ],
       reservation_status: [
         "confirmed",
@@ -1190,6 +1773,12 @@ export const Constants = {
         "housekeeping",
         "inventory_manager",
         "accountant",
+        "engineering",
+        "hr",
+        "crm_marketing",
+        "banquet",
+        "spa_laundry",
+        "travel_desk",
       ],
       stock_movement_type: [
         "purchase_receipt",

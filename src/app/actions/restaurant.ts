@@ -35,10 +35,16 @@ export async function createMenuCategory(formData: FormData) {
 
 export async function createMenuItem(formData: FormData) {
   const { supabase } = await requireUser();
+  const parcel = formData.get("parcel_price") as string;
+  const ownDelivery = formData.get("own_delivery_price") as string;
+  const aggregator = formData.get("aggregator_price") as string;
   const { error } = await supabase.from("menu_items").insert({
     category_id: String(formData.get("category_id")),
     name: String(formData.get("name")),
     price: Number(formData.get("price") ?? 0),
+    parcel_price: parcel ? Number(parcel) : null,
+    own_delivery_price: ownDelivery ? Number(ownDelivery) : null,
+    aggregator_price: aggregator ? Number(aggregator) : null,
     is_veg: formData.get("is_veg") === "on",
     description: (formData.get("description") as string) || null,
   });

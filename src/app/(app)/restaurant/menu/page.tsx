@@ -1,60 +1,69 @@
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
 import { createMenuCategory, createMenuItem } from "@/app/actions/restaurant";
-import { Card, CardHeader, Input, Label, Select, EmptyState } from "@/components/ui";
+import { Card, CardHeader, Breadcrumb, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { MenuItemToggle } from "@/components/menu-item-toggle";
 
 export default async function MenuPage() {
   const supabase = await createClient();
+  const org = await getOrgContext();
   const [{ data: categories }, { data: items }] = await Promise.all([
     supabase.from("menu_categories").select("id, name, sort_order").order("sort_order"),
-    supabase.from("menu_items").select("id, name, price, is_veg, is_available, category_id, menu_categories(name)").order("name"),
+    supabase
+      .from("menu_items")
+      .select(
+        "id, name, price, parcel_price, own_delivery_price, aggregator_price, is_veg, is_available, category_id, menu_categories(name)",
+      )
+      .order("name"),
   ]);
-
-  const byCategory = new Map<string, typeof items>();
-  for (const item of items ?? []) {
-    const key = item.category_id;
-    byCategory.set(key, [...(byCategory.get(key) ?? []), item]);
-  }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-900">Menu</h1>
+      <Breadcrumb items={[org.corporateName, org.regionName, org.hotelName, "Menu Management"]} />
+      <h1 className="text-xl text-gray-900">Menu Management</h1>
+      <p className="-mt-4 text-sm text-gray-500">
+        One menu, per-channel pricing and availability — a stock-out here syncs to every channel.
+      </p>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          {!categories?.length ? (
-            <Card>
-              <EmptyState>No menu categories yet.</EmptyState>
-            </Card>
+        <Card className="overflow-x-auto lg:col-span-2">
+          {!items?.length ? (
+            <EmptyState>No menu items yet.</EmptyState>
           ) : (
-            categories.map((cat) => (
-              <Card key={cat.id}>
-                <CardHeader title={cat.name} />
-                {!byCategory.get(cat.id)?.length ? (
-                  <EmptyState>No items in this category.</EmptyState>
-                ) : (
-                  <table className="w-full text-sm">
-                    <tbody>
-                      {byCategory.get(cat.id)!.map((item) => (
-                        <tr key={item.id} className="border-b border-gray-50 last:border-0">
-                          <td className="px-5 py-2.5 text-gray-800">
-                            <span className={`mr-2 inline-block h-2 w-2 rounded-full ${item.is_veg ? "bg-emerald-500" : "bg-red-500"}`} />
-                            {item.name}
-                          </td>
-                          <td className="px-5 py-2.5 text-gray-600">₹{item.price}</td>
-                          <td className="px-5 py-2.5 text-right">
-                            <MenuItemToggle itemId={item.id} available={item.is_available} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </Card>
-            ))
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-black/10 text-left text-xs uppercase text-gray-400">
+                  <th className="px-4 py-2 font-medium">Item</th>
+                  <th className="px-3 py-2 font-medium">Category</th>
+                  <th className="px-3 py-2 font-medium">Dine-In</th>
+                  <th className="px-3 py-2 font-medium">Parcel</th>
+                  <th className="px-3 py-2 font-medium">Own Delivery</th>
+                  <th className="px-3 py-2 font-medium">Aggregator</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id} className="border-b border-gray-50 last:border-0">
+                    <td className="whitespace-nowrap px-4 py-2 text-gray-800">
+                      <span className={`mr-2 inline-block h-2 w-2 rounded-full ${item.is_veg ? "bg-emerald-500" : "bg-red-500"}`} />
+                      {item.name}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-gray-500">{item.menu_categories?.name}</td>
+                    <td className="px-3 py-2 text-gray-700">₹{item.price}</td>
+                    <td className="px-3 py-2 text-gray-700">{item.parcel_price ? `₹${item.parcel_price}` : "—"}</td>
+                    <td className="px-3 py-2 text-gray-700">{item.own_delivery_price ? `₹${item.own_delivery_price}` : "—"}</td>
+                    <td className="px-3 py-2 text-gray-700">{item.aggregator_price ? `₹${item.aggregator_price}` : "—"}</td>
+                    <td className="px-3 py-2">
+                      <MenuItemToggle itemId={item.id} available={item.is_available} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
-        </div>
+        </Card>
 
         <div className="space-y-6">
           <Card>
@@ -90,9 +99,23 @@ export default async function MenuPage() {
                 <Label>Name</Label>
                 <Input name="name" required />
               </div>
-              <div>
-                <Label>Price</Label>
-                <Input name="price" type="number" min={0} step="0.01" required />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Dine-in price</Label>
+                  <Input name="price" type="number" min={0} step="0.01" required />
+                </div>
+                <div>
+                  <Label>Parcel price</Label>
+                  <Input name="parcel_price" type="number" min={0} step="0.01" />
+                </div>
+                <div>
+                  <Label>Own delivery price</Label>
+                  <Input name="own_delivery_price" type="number" min={0} step="0.01" />
+                </div>
+                <div>
+                  <Label>Aggregator price</Label>
+                  <Input name="aggregator_price" type="number" min={0} step="0.01" />
+                </div>
               </div>
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" name="is_veg" defaultChecked /> Vegetarian

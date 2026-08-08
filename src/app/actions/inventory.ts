@@ -101,6 +101,28 @@ export async function markPurchaseOrderOrdered(poId: string) {
   revalidatePath("/inventory/purchase-orders");
 }
 
+const PO_STAGE_ORDER = ["draft", "pending_approval", "approved", "ordered", "received"] as const;
+
+export async function advancePurchaseOrderStage(poId: string, currentStatus: string) {
+  const { supabase } = await requireUser();
+  const idx = PO_STAGE_ORDER.indexOf(currentStatus as (typeof PO_STAGE_ORDER)[number]);
+  const next = idx >= 0 && idx < PO_STAGE_ORDER.length - 1 ? PO_STAGE_ORDER[idx + 1] : null;
+  if (!next) throw new Error("Already at the final stage");
+  const { error } = await supabase.from("purchase_orders").update({ status: next }).eq("id", poId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/live/purchase-board");
+  revalidatePath("/inventory/purchase-orders");
+  revalidatePath(`/inventory/purchase-orders/${poId}`);
+}
+
+export async function rejectPurchaseOrder(poId: string) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.from("purchase_orders").update({ status: "rejected" }).eq("id", poId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/live/purchase-board");
+  revalidatePath("/inventory/purchase-orders");
+}
+
 export async function receivePurchaseOrderItem(poId: string, poItemId: string, quantity: number) {
   const { supabase, user } = await requireUser();
   const { error } = await supabase.rpc("receive_po_item", {

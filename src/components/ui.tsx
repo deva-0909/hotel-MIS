@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-lg border border-gray-200 bg-white shadow-sm ${className}`}>
+    <div className={`rounded-lg border border-black/10 bg-white ${className}`}>
       {children}
     </div>
   );
@@ -10,7 +10,7 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 
 export function CardHeader({ title, action }: { title: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
+    <div className="flex items-center justify-between border-b border-black/10 px-5 py-3">
       <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
       {action}
     </div>
@@ -24,6 +24,7 @@ const badgeColors: Record<string, string> = {
   amber: "bg-amber-100 text-amber-700",
   red: "bg-red-100 text-red-700",
   purple: "bg-purple-100 text-purple-700",
+  gold: "bg-accent-soft text-accent border border-accent/30",
 };
 
 export function Badge({ children, color = "gray" }: { children: ReactNode; color?: keyof typeof badgeColors }) {
@@ -94,9 +95,22 @@ export function EmptyState({ children }: { children: ReactNode }) {
 export function StatTile({ label, value, sub }: { label: string; value: ReactNode; sub?: string }) {
   return (
     <Card className="px-5 py-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-gray-900">{value}</div>
+      <div className="text-[11px] font-medium uppercase tracking-wider text-accent">{label}</div>
+      <div className="mt-1.5 font-serif text-2xl text-gray-900">{value}</div>
       {sub && <div className="mt-1 text-xs text-gray-500">{sub}</div>}
     </Card>
+  );
+}
+
+export function Breadcrumb({ items }: { items: string[] }) {
+  return (
+    <div className="mb-4 border-b border-black/10 pb-3 text-sm text-gray-500">
+      {items.map((item, i) => (
+        <span key={i}>
+          {i > 0 && <span className="mx-1.5 text-gray-300">/</span>}
+          {i === items.length - 1 ? <span className="text-gray-700">{item}</span> : item}
+        </span>
+      ))}
+    </div>
   );
 }

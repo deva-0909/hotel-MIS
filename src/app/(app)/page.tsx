@@ -1,9 +1,26 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardHeader, StatTile, Badge, EmptyState } from "@/components/ui";
+import { getOrgContext } from "@/lib/org-context";
+import { Card, CardHeader, StatTile, Badge, Breadcrumb, EmptyState } from "@/components/ui";
+
+const DEPARTMENTS = [
+  { code: "FO", href: "/departments/front-office", label: "Front Office" },
+  { code: "HK", href: "/departments/housekeeping", label: "Housekeeping" },
+  { code: "RS", href: "/departments/restaurant", label: "Restaurant" },
+  { code: "KT", href: "/departments/kitchen", label: "Kitchen" },
+  { code: "SP", href: "/departments/stores-purchase", label: "Stores & Purchase" },
+  { code: "EM", href: "/departments/engineering", label: "Engineering & Maintenance" },
+  { code: "HR", href: "/departments/hr", label: "Human Resources" },
+  { code: "AC", href: "/departments/accounts", label: "Accounts & Finance" },
+  { code: "CM", href: "/departments/crm", label: "CRM & Marketing" },
+  { code: "BQ", href: "/departments/banquet", label: "Banquet & Events" },
+  { code: "SL", href: "/departments/spa-laundry", label: "Spa & Laundry" },
+  { code: "TD", href: "/departments/travel-desk", label: "Travel Desk" },
+];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const org = await getOrgContext();
   const today = new Date().toISOString().slice(0, 10);
 
   const [
@@ -12,7 +29,7 @@ export default async function DashboardPage() {
     { data: departures },
     { data: openOrders },
     { data: inventoryItems },
-    { data: openInvoices },
+    { data: inHouseRates },
   ] = await Promise.all([
     supabase.from("rooms").select("status"),
     supabase
@@ -30,24 +47,45 @@ export default async function DashboardPage() {
       .select("id, order_number, order_type, status, restaurant_tables(table_number)")
       .in("status", ["open", "sent_to_kitchen", "preparing", "ready", "served"]),
     supabase.from("inventory_items").select("id, name, current_stock, reorder_level, unit"),
-    supabase.from("invoices").select("id, invoice_number, total_amount, amount_paid").in("status", ["issued", "partially_paid"]),
+    supabase.from("reservations").select("rate_per_night").eq("status", "checked_in"),
   ]);
 
   const occupied = rooms?.filter((r) => r.status === "occupied").length ?? 0;
   const totalRooms = rooms?.length ?? 0;
   const occupancyPct = totalRooms ? Math.round((occupied / totalRooms) * 100) : 0;
   const lowStock = inventoryItems?.filter((i) => Number(i.current_stock) <= Number(i.reorder_level)) ?? [];
-  const outstanding = openInvoices?.reduce((sum, i) => sum + (Number(i.total_amount) - Number(i.amount_paid)), 0) ?? 0;
+  const adr = inHouseRates?.length
+    ? inHouseRates.reduce((sum, r) => sum + Number(r.rate_per_night), 0) / inHouseRates.length
+    : 0;
+  const revpar = adr * (occupancyPct / 100);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+      <Breadcrumb items={[org.corporateName, org.regionName, org.hotelName]} />
+      <div className="text-xs font-semibold uppercase tracking-wider text-accent">Property</div>
+      <h1 className="text-2xl text-gray-900">{org.hotelName}</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatTile label="Rooms" value={totalRooms} />
         <StatTile label="Occupancy" value={`${occupancyPct}%`} sub={`${occupied} of ${totalRooms} rooms`} />
-        <StatTile label="Open restaurant orders" value={openOrders?.length ?? 0} />
-        <StatTile label="Low stock items" value={lowStock.length} />
-        <StatTile label="Outstanding balance" value={`₹${outstanding.toFixed(0)}`} sub={`${openInvoices?.length ?? 0} unpaid invoices`} />
+        <StatTile label="ADR" value={`₹${adr.toFixed(0)}`} />
+        <StatTile label="RevPAR" value={`₹${revpar.toFixed(0)}`} />
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-gray-500">Departments</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {DEPARTMENTS.map((d) => (
+            <Link key={d.href} href={d.href}>
+              <Card className="px-4 py-3 transition-colors hover:border-accent/40">
+                <span className="mb-1.5 inline-flex h-6 w-8 items-center justify-center rounded border border-accent/40 text-[10px] font-medium text-accent">
+                  {d.code}
+                </span>
+                <div className="text-sm font-medium text-gray-900">{d.label}</div>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

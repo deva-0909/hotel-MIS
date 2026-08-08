@@ -4,14 +4,7 @@ import { addPurchaseOrderItem } from "@/app/actions/inventory";
 import { Card, CardHeader, Badge, Select, Input, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { MarkOrderedButton, ReceiveLineControl } from "./po-actions";
-
-const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> = {
-  draft: "gray",
-  ordered: "blue",
-  partially_received: "amber",
-  received: "green",
-  cancelled: "red",
-};
+import { PO_STATUS_COLOR } from "@/lib/status-colors";
 
 export default async function PurchaseOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -41,7 +34,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: Prom
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold text-gray-900">{po.po_number}</h1>
-            <Badge color={STATUS_COLOR[po.status]}>{po.status.replace(/_/g, " ")}</Badge>
+            <Badge color={PO_STATUS_COLOR[po.status]}>{po.status.replace(/_/g, " ")}</Badge>
           </div>
           <p className="mt-1 text-sm text-gray-500">
             {po.suppliers?.name} · Ordered {po.order_date}
@@ -78,7 +71,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: Prom
                     {item.received_quantity} {item.inventory_items?.unit}
                   </td>
                   <td className="px-5 py-2.5">
-                    {po.status !== "draft" && po.status !== "cancelled" && (
+                    {(po.status === "ordered" || po.status === "partially_received") && (
                       <ReceiveLineControl poId={po.id} poItemId={item.id} outstanding={item.quantity - item.received_quantity} />
                     )}
                   </td>

@@ -1,14 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, Badge, Button, EmptyState } from "@/components/ui";
-
-const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> = {
-  draft: "gray",
-  ordered: "blue",
-  partially_received: "amber",
-  received: "green",
-  cancelled: "red",
-};
+import { PO_STATUS_COLOR } from "@/lib/status-colors";
 
 export default async function PurchaseOrdersPage() {
   const supabase = await createClient();
@@ -52,7 +45,7 @@ export default async function PurchaseOrdersPage() {
                   <td className="px-5 py-2.5 text-gray-600">{po.order_date}</td>
                   <td className="px-5 py-2.5 text-gray-600">{po.expected_date ?? "—"}</td>
                   <td className="px-5 py-2.5">
-                    <Badge color={STATUS_COLOR[po.status]}>{po.status.replace(/_/g, " ")}</Badge>
+                    <Badge color={PO_STATUS_COLOR[po.status]}>{po.status.replace(/_/g, " ")}</Badge>
                   </td>
                 </tr>
               ))}
