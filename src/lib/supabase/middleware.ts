@@ -33,22 +33,21 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = request.nextUrl.pathname.startsWith("/login");
 
   if (!user) {
-    // Demo mode: silently sign in as a fixed demo account instead of showing
-    // the login screen, so the app always opens straight into the dashboard —
-    // even if /login is hit directly. Falls back to the real login form if
-    // the demo credentials aren't configured or fail.
-    const demoEmail = process.env.DEMO_LOGIN_EMAIL;
-    const demoPassword = process.env.DEMO_LOGIN_PASSWORD;
-    if (demoEmail && demoPassword) {
-      const { error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
-      if (!error) {
-        if (isAuthRoute) {
-          const url = request.nextUrl.clone();
-          url.pathname = "/";
-          return NextResponse.redirect(url);
-        }
-        return response;
+    // Client-demo mode: silently sign in as a fixed demo account instead of
+    // showing the login screen, so the app always opens straight into the
+    // dashboard — even if /login is hit directly. Hardcoded on purpose (not
+    // an env var) so this works with zero deploy configuration; an env var
+    // still overrides it if you want to point at a different account.
+    const demoEmail = process.env.DEMO_LOGIN_EMAIL || "demo@hotel-ms.local";
+    const demoPassword = process.env.DEMO_LOGIN_PASSWORD || "HotelDemo#2026";
+    const { error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
+    if (!error) {
+      if (isAuthRoute) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
       }
+      return response;
     }
 
     if (!isAuthRoute) {
