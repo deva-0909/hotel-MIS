@@ -8,6 +8,7 @@ const COLUMNS: { status: string; label: string }[] = [
   { status: "pending_approval", label: "Pending Approval" },
   { status: "approved", label: "Approved" },
   { status: "ordered", label: "PO Issued" },
+  { status: "partially_received", label: "Partially Received" },
   { status: "received", label: "GRN Received" },
   { status: "rejected", label: "Rejected" },
 ];

@@ -15,12 +15,14 @@ async function requireUser() {
 export async function assignAttendant(formData: FormData) {
   const { supabase } = await requireUser();
   const roomId = String(formData.get("room_id"));
+  // Deliberately omits `status` — on conflict this must not disturb whatever
+  // cleaning status the room is already in. It only applies on first insert,
+  // where the column default ('dirty') is the sensible starting state.
   const { error } = await supabase.from("housekeeping_tasks").upsert(
     {
       room_id: roomId,
       attendant: (formData.get("attendant") as string) || null,
       priority: (formData.get("priority") as string) || null,
-      status: "dirty",
     },
     { onConflict: "room_id" },
   );

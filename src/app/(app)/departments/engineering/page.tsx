@@ -3,7 +3,7 @@ import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Badge, Breadcrumb, StatTile, EmptyState, Input, Select, Label } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createWorkOrder } from "@/app/actions/engineering";
-import { WorkOrderStatusControl } from "./engineering-actions";
+import { AssignedToControl, WorkOrderStatusControl } from "./engineering-actions";
 
 const PRIORITY_COLOR: Record<string, "green" | "amber" | "red"> = { low: "green", medium: "amber", high: "red" };
 
@@ -54,6 +54,7 @@ export default async function EngineeringDepartmentPage() {
                   <th className="px-5 py-2 font-medium">Location</th>
                   <th className="px-5 py-2 font-medium">Issue</th>
                   <th className="px-5 py-2 font-medium">Priority</th>
+                  <th className="px-5 py-2 font-medium">Assigned To</th>
                   <th className="px-5 py-2 font-medium">Status</th>
                 </tr>
               </thead>
@@ -65,6 +66,9 @@ export default async function EngineeringDepartmentPage() {
                     <td className="px-5 py-2.5 text-gray-600">{wo.issue}</td>
                     <td className="px-5 py-2.5">
                       <Badge color={PRIORITY_COLOR[wo.priority]}>{wo.priority}</Badge>
+                    </td>
+                    <td className="px-5 py-2.5">
+                      <AssignedToControl workOrderId={wo.id} assignedTo={wo.assigned_to} />
                     </td>
                     <td className="px-5 py-2.5">
                       <WorkOrderStatusControl workOrderId={wo.id} status={wo.status} />

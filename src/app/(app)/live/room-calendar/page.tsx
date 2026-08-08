@@ -10,6 +10,13 @@ function cellCode(
   reservations: { check_in_date: string; check_out_date: string; status: string }[],
 ) {
   if (room.status === "out_of_order" || room.status === "maintenance") return "X";
+
+  // Departure day is checked separately: a stay's check_out_date is excluded
+  // from its own "covering" range below, so without this branch a guest
+  // leaving today would render as merely "Vacant" instead of "Departure".
+  const departing = reservations.find((r) => r.check_out_date === date && r.status === "checked_in");
+  if (departing) return "D";
+
   const covering = reservations.find(
     (r) => date >= r.check_in_date && date < r.check_out_date && (r.status === "confirmed" || r.status === "checked_in"),
   );

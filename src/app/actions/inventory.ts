@@ -104,15 +104,55 @@ export async function markPurchaseOrderOrdered(poId: string) {
 const PO_STAGE_ORDER = ["draft", "pending_approval", "approved", "ordered", "received"] as const;
 
 export async function advancePurchaseOrderStage(poId: string, currentStatus: string) {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const idx = PO_STAGE_ORDER.indexOf(currentStatus as (typeof PO_STAGE_ORDER)[number]);
-  const next = idx >= 0 && idx < PO_STAGE_ORDER.length - 1 ? PO_STAGE_ORDER[idx + 1] : null;
+  // partially_received sits outside the linear stage order (it's reached via
+  // the itemized receiving flow, not this board) but should still be able to
+  // advance straight to fully received.
+  const next =
+    currentStatus === "partially_received"
+      ? "received"
+      : idx >= 0 && idx < PO_STAGE_ORDER.length - 1
+        ? PO_STAGE_ORDER[idx + 1]
+        : null;
   if (!next) throw new Error("Already at the final stage");
-  const { error } = await supabase.from("purchase_orders").update({ status: next }).eq("id", poId);
-  if (error) throw new Error(error.message);
+
+  if (next === "received") {
+    // Advancing to "GRN Received" must actually receive every outstanding
+    // line (via the same RPC the itemized receiving flow uses) so stock
+    // levels move too — not just flip the status label.
+    const { data: items, error: itemsError } = await supabase
+      .from("purchase_order_items")
+      .select("id, quantity, received_quantity")
+      .eq("po_id", poId);
+    if (itemsError) throw new Error(itemsError.message);
+
+    for (const item of items ?? []) {
+      const outstanding = item.quantity - item.received_quantity;
+      if (outstanding > 0) {
+        const { error: receiveError } = await supabase.rpc("receive_po_item", {
+          p_po_item_id: item.id,
+          p_quantity: outstanding,
+          p_staff_id: user.id,
+        });
+        if (receiveError) throw new Error(receiveError.message);
+      }
+    }
+    if (!items?.length) {
+      // No line items to receive — nothing for the RPC to flip the status
+      // on, so set it directly rather than leaving the PO stuck.
+      const { error } = await supabase.from("purchase_orders").update({ status: "received" }).eq("id", poId);
+      if (error) throw new Error(error.message);
+    }
+  } else {
+    const { error } = await supabase.from("purchase_orders").update({ status: next }).eq("id", poId);
+    if (error) throw new Error(error.message);
+  }
+
   revalidatePath("/live/purchase-board");
   revalidatePath("/inventory/purchase-orders");
   revalidatePath(`/inventory/purchase-orders/${poId}`);
+  revalidatePath("/inventory/items");
 }
 
 export async function rejectPurchaseOrder(poId: string) {
