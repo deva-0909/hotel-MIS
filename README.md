@@ -50,6 +50,11 @@ Same pattern as the rest of this repo — push to GitHub, then import into Verce
 - `NEXT_PUBLIC_SUPABASE_URL` = `https://duyqsvueqdmybxlwtuhc.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (the anon/publishable key in `.env.example`)
 
+Optionally, for client demos, also set `DEMO_LOGIN_EMAIL` / `DEMO_LOGIN_PASSWORD` to a staff account's
+credentials — the app then silently signs in as that account instead of showing the login screen, so it
+always opens straight into the dashboard with a "Viewing as (demo)" role switcher in the sidebar. Leave
+these unset for a normal deployment with real login.
+
 ## Notable gaps / next steps
 
 - **Per-role write permissions** are not enforced yet — any active staff member can write to any table
