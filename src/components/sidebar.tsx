@@ -72,30 +72,6 @@ export function Sidebar({ fullName, role }: { fullName: string; role: StaffRole 
         <div className="text-sm font-semibold text-gray-900">Hotel &amp; Restaurant MS</div>
       </div>
 
-      <div className="border-b border-gray-100 px-4 py-3">
-        <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-          Viewing as (demo)
-        </label>
-        <select
-          value={role}
-          disabled={switching}
-          onChange={(e) => {
-            const next = e.target.value as StaffRole;
-            startSwitching(async () => {
-              await updateOwnRole(next);
-              router.refresh();
-            });
-          }}
-          className="w-full rounded-md border border-gray-300 px-2 py-1 text-xs capitalize focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
-        >
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r.replace(/_/g, " ")}
-            </option>
-          ))}
-        </select>
-      </div>
-
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         {visibleNav.map((group) => (
           <div key={group.section} className="mb-3">
@@ -123,7 +99,24 @@ export function Sidebar({ fullName, role }: { fullName: string; role: StaffRole 
       </nav>
       <div className="border-t border-gray-100 px-4 py-3">
         <div className="text-xs font-medium text-gray-800">{fullName}</div>
-        <div className="text-[11px] capitalize text-gray-500">{role.replace(/_/g, " ")}</div>
+        <select
+          value={role}
+          disabled={switching}
+          onChange={(e) => {
+            const next = e.target.value as StaffRole;
+            startSwitching(async () => {
+              await updateOwnRole(next);
+              router.refresh();
+            });
+          }}
+          className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1 text-xs capitalize focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+        >
+          {ROLES.map((r) => (
+            <option key={r} value={r}>
+              {r.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
         <button
           className="mt-2 text-xs text-gray-500 hover:text-gray-800"
           onClick={async () => {
