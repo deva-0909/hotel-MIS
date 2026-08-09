@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, Badge, Button, EmptyState } from "@/components/ui";
 
 const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> = {
@@ -53,8 +54,8 @@ export default async function InvoicesPage() {
                     </Link>
                   </td>
                   <td className="px-5 py-2.5 text-gray-700">{inv.guests?.full_name}</td>
-                  <td className="px-5 py-2.5 text-gray-700">₹{inv.total_amount}</td>
-                  <td className="px-5 py-2.5 text-gray-600">₹{inv.amount_paid}</td>
+                  <td className="px-5 py-2.5 text-gray-700">{formatMoney(inv.total_amount, org.currency)}</td>
+                  <td className="px-5 py-2.5 text-gray-600">{formatMoney(inv.amount_paid, org.currency)}</td>
                   <td className="px-5 py-2.5">
                     <Badge color={STATUS_COLOR[inv.status]}>{inv.status.replace(/_/g, " ")}</Badge>
                   </td>

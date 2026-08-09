@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Breadcrumb, StatTile, EmptyState, Input, Select, Label } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createSpaBooking, createLaundryBatch } from "@/app/actions/spa-laundry";
@@ -134,7 +135,7 @@ export default async function SpaLaundryDepartmentPage() {
                   <option value="">Select service…</option>
                   {services?.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} — ₹{s.price}
+                      {s.name} — {formatMoney(s.price, org.currency)}
                     </option>
                   ))}
                 </Select>

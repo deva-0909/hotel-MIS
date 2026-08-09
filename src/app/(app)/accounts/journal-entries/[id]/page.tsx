@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 
 export default async function JournalEntryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const org = await getOrgContext();
 
   const { data: entry } = await supabase
     .from("journal_entries")
@@ -51,16 +54,16 @@ export default async function JournalEntryDetailPage({ params }: { params: Promi
                   <td className="px-5 py-2.5 text-gray-800">
                     {l.chart_of_accounts?.code} — {l.chart_of_accounts?.name}
                   </td>
-                  <td className="px-5 py-2.5 text-gray-700">{Number(l.debit) > 0 ? `₹${Number(l.debit).toFixed(2)}` : ""}</td>
-                  <td className="px-5 py-2.5 text-gray-700">{Number(l.credit) > 0 ? `₹${Number(l.credit).toFixed(2)}` : ""}</td>
+                  <td className="px-5 py-2.5 text-gray-700">{Number(l.debit) > 0 ? formatMoney(l.debit, org.currency) : ""}</td>
+                  <td className="px-5 py-2.5 text-gray-700">{Number(l.credit) > 0 ? formatMoney(l.credit, org.currency) : ""}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className="border-t border-gray-200 font-semibold text-gray-900">
                 <td className="px-5 py-2.5">Total</td>
-                <td className="px-5 py-2.5">₹{totalDebit.toFixed(2)}</td>
-                <td className="px-5 py-2.5">₹{totalCredit.toFixed(2)}</td>
+                <td className="px-5 py-2.5">{formatMoney(totalDebit, org.currency)}</td>
+                <td className="px-5 py-2.5">{formatMoney(totalCredit, org.currency)}</td>
               </tr>
             </tfoot>
           </table>

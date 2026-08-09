@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { addEventMenuItem } from "@/app/actions/banquet";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Select, Input, Label } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { EVENT_STATUS_COLOR } from "@/lib/status-colors";
@@ -85,13 +86,13 @@ export default async function BanquetEventOrderPage({ params }: { params: Promis
           </div>
           <div>
             <div className="text-xs uppercase text-gray-400">Contracted value</div>
-            <div className="mt-0.5 text-gray-900">₹{event.value_amount}</div>
+            <div className="mt-0.5 text-gray-900">{formatMoney(event.value_amount, org.currency)}</div>
           </div>
         </div>
       </Card>
 
       <Card>
-        <CardHeader title={`Food & beverage — ${coversOrdered} covers ordered, ₹${foodCost.toFixed(2)}`} />
+        <CardHeader title={`Food & beverage — ${coversOrdered} covers ordered, ${formatMoney(foodCost, org.currency)}`} />
         {!items?.length ? (
           <EmptyState>No packages selected yet.</EmptyState>
         ) : (
@@ -111,9 +112,11 @@ export default async function BanquetEventOrderPage({ params }: { params: Promis
                 <tr key={item.id} className="border-b border-gray-50 last:border-0">
                   <td className="px-5 py-2.5 font-medium text-gray-900">{item.banquet_menu_packages?.name}</td>
                   <td className="px-5 py-2.5 text-gray-600">{item.covers}</td>
-                  <td className="px-5 py-2.5 text-gray-600">₹{item.banquet_menu_packages?.price_per_cover}</td>
                   <td className="px-5 py-2.5 text-gray-600">
-                    ₹{(item.covers * (item.banquet_menu_packages?.price_per_cover ?? 0)).toFixed(2)}
+                    {formatMoney(item.banquet_menu_packages?.price_per_cover ?? 0, org.currency)}
+                  </td>
+                  <td className="px-5 py-2.5 text-gray-600">
+                    {formatMoney(item.covers * (item.banquet_menu_packages?.price_per_cover ?? 0), org.currency)}
                   </td>
                   <td className="px-5 py-2.5 text-gray-600">{item.notes ?? "—"}</td>
                   <td className="px-5 py-2.5 print:hidden">
@@ -135,7 +138,7 @@ export default async function BanquetEventOrderPage({ params }: { params: Promis
               <option value="">Select package…</option>
               {packages?.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} (₹{p.price_per_cover}/cover)
+                  {p.name} ({formatMoney(p.price_per_cover, org.currency)}/cover)
                 </option>
               ))}
             </Select>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Breadcrumb, StatTile, EmptyState, Button } from "@/components/ui";
 
 const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> = {
@@ -48,8 +49,8 @@ export default async function AccountsDepartmentPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatTile label="Revenue MTD" value={`₹${revenueMtd.toFixed(0)}`} />
-        <StatTile label="Outstanding AR" value={`₹${outstanding.toFixed(0)}`} />
+        <StatTile label="Revenue MTD" value={formatMoney(revenueMtd, org.currency)} />
+        <StatTile label="Outstanding AR" value={formatMoney(outstanding, org.currency)} />
         <StatTile label="Invoices" value={invoices?.length ?? 0} />
       </div>
 
@@ -77,7 +78,7 @@ export default async function AccountsDepartmentPage() {
                       </Link>
                     </td>
                     <td className="px-5 py-2.5 text-gray-600">{inv.guests?.full_name}</td>
-                    <td className="px-5 py-2.5 text-gray-600">₹{inv.total_amount}</td>
+                    <td className="px-5 py-2.5 text-gray-600">{formatMoney(inv.total_amount, org.currency)}</td>
                     <td className="px-5 py-2.5">
                       <Badge color={STATUS_COLOR[inv.status]}>{inv.status.replace(/_/g, " ")}</Badge>
                     </td>

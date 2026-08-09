@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createReservation } from "@/app/actions/hotel";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Input, Label, Select } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 
@@ -9,7 +10,17 @@ type Guest = { id: string; full_name: string; phone: string | null };
 type RoomType = { id: string; name: string; base_rate: number };
 type Room = { id: string; room_number: string; room_type_id: string; status: string };
 
-export function ReservationForm({ guests, roomTypes, rooms }: { guests: Guest[]; roomTypes: RoomType[]; rooms: Room[] }) {
+export function ReservationForm({
+  guests,
+  roomTypes,
+  rooms,
+  currency,
+}: {
+  guests: Guest[];
+  roomTypes: RoomType[];
+  rooms: Room[];
+  currency: string;
+}) {
   const [guestMode, setGuestMode] = useState<"existing" | "new">(guests.length ? "existing" : "new");
   const [roomTypeId, setRoomTypeId] = useState(roomTypes[0]?.id ?? "");
 
@@ -88,7 +99,7 @@ export function ReservationForm({ guests, roomTypes, rooms }: { guests: Guest[];
             >
               {roomTypes.map((rt) => (
                 <option key={rt.id} value={rt.id}>
-                  {rt.name} — ₹{rt.base_rate}/night
+                  {rt.name} — {formatMoney(rt.base_rate, currency)}/night
                 </option>
               ))}
             </Select>

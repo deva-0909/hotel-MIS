@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Breadcrumb, StatTile } from "@/components/ui";
 
 export default async function CorporateDashboardPage() {
@@ -9,7 +10,7 @@ export default async function CorporateDashboardPage() {
   monthStart.setDate(1);
 
   const [{ data: properties }, { data: rooms }, { data: monthInvoices }] = await Promise.all([
-    supabase.from("properties").select("id, name, city, is_active").order("name"),
+    supabase.from("properties").select("id, name, city, currency, is_active").order("name"),
     supabase.from("rooms").select("property_id, status"),
     supabase.from("invoices").select("property_id, amount_paid").gte("created_at", monthStart.toISOString()),
   ]);
@@ -17,6 +18,14 @@ export default async function CorporateDashboardPage() {
   const occupied = rooms?.filter((r) => r.status === "occupied").length ?? 0;
   const occupancy = rooms?.length ? Math.round((occupied / rooms.length) * 100) : 0;
   const revenueMtd = monthInvoices?.reduce((sum, i) => sum + Number(i.amount_paid), 0) ?? 0;
+  const currencyById = new Map((properties ?? []).map((p) => [p.id, p.currency]));
+  // A single group-wide sum only means anything if every property shares a
+  // currency — otherwise it's adding unlike units. Fall back to a plain
+  // number with a note rather than pick one property's symbol and pretend
+  // the others don't exist.
+  const distinctCurrencies = new Set((properties ?? []).map((p) => p.currency));
+  const groupRevenueLabel =
+    distinctCurrencies.size <= 1 ? formatMoney(revenueMtd, org.currency) : `${revenueMtd.toFixed(0)} (mixed currencies)`;
 
   const roomsByProperty = new Map<string, { total: number; occupied: number }>();
   for (const r of rooms ?? []) {
@@ -40,7 +49,7 @@ export default async function CorporateDashboardPage() {
         <StatTile label="Properties" value={properties?.length ?? 0} />
         <StatTile label="Total Rooms" value={rooms?.length ?? 0} />
         <StatTile label="Group Occupancy" value={`${occupancy}%`} />
-        <StatTile label="Group Revenue MTD" value={`₹${revenueMtd.toFixed(0)}`} />
+        <StatTile label="Group Revenue MTD" value={groupRevenueLabel} />
       </div>
 
       <Card>
@@ -65,7 +74,9 @@ export default async function CorporateDashboardPage() {
                   <td className="px-5 py-2.5 text-gray-600">{p.city ?? "—"}</td>
                   <td className="px-5 py-2.5 text-gray-600">{stats.total}</td>
                   <td className="px-5 py-2.5 text-gray-600">{pct}%</td>
-                  <td className="px-5 py-2.5 text-gray-600">₹{(revenueByProperty.get(p.id) ?? 0).toFixed(0)}</td>
+                  <td className="px-5 py-2.5 text-gray-600">
+                    {formatMoney(revenueByProperty.get(p.id) ?? 0, currencyById.get(p.id) ?? org.currency)}
+                  </td>
                 </tr>
               );
             })}

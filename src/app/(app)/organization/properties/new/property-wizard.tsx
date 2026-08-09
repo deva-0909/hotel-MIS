@@ -11,6 +11,8 @@ import {
   wizardCreateRestaurant,
 } from "@/app/actions/property-wizard";
 import { updateOwnProperty } from "@/app/actions/staff";
+import { CURRENCIES } from "@/lib/currencies";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Input, Label, Select, Button, EmptyState } from "@/components/ui";
 
 type Step = "property" | "buildings" | "room-types" | "rooms" | "restaurants" | "done";
@@ -54,7 +56,7 @@ export function PropertyWizard() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [property, setProperty] = useState<{ id: string; name: string; code: string } | null>(null);
+  const [property, setProperty] = useState<{ id: string; name: string; code: string; currency: string } | null>(null);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -175,6 +177,16 @@ export function PropertyWizard() {
               <Label>GSTIN</Label>
               <Input name="gstin" />
             </div>
+            <div>
+              <Label>Currency</Label>
+              <Select name="currency" defaultValue="INR">
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
             <Button type="submit" disabled={pending}>
               {pending ? "Creating…" : "Create property & continue"}
             </Button>
@@ -243,7 +255,7 @@ export function PropertyWizard() {
                 {roomTypes.map((rt) => (
                   <div key={rt.id} className="flex items-center justify-between py-2 text-sm">
                     <span className="text-gray-700">{rt.name}</span>
-                    <span className="text-gray-500">₹{rt.base_rate}/night</span>
+                    <span className="text-gray-500">{formatMoney(rt.base_rate, property.currency)}/night</span>
                   </div>
                 ))}
               </div>

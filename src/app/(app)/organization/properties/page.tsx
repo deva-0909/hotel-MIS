@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
-import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, Button } from "@/components/ui";
+import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, Select, Button } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createProperty } from "@/app/actions/property";
+import { CURRENCIES } from "@/lib/currencies";
 
 export default async function PropertiesPage() {
   const supabase = await createClient();
@@ -11,7 +12,7 @@ export default async function PropertiesPage() {
 
   const { data: properties } = await supabase
     .from("properties")
-    .select("id, name, code, city, is_active, buildings(count), restaurants(count)")
+    .select("id, name, code, city, currency, is_active, buildings(count), restaurants(count)")
     .order("name");
 
   return (
@@ -40,6 +41,7 @@ export default async function PropertiesPage() {
                   <th className="px-5 py-2 font-medium">Property</th>
                   <th className="px-5 py-2 font-medium">Code</th>
                   <th className="px-5 py-2 font-medium">City</th>
+                  <th className="px-5 py-2 font-medium">Currency</th>
                   <th className="px-5 py-2 font-medium">Buildings</th>
                   <th className="px-5 py-2 font-medium">Restaurants</th>
                   <th className="px-5 py-2 font-medium">Status</th>
@@ -55,6 +57,7 @@ export default async function PropertiesPage() {
                     </td>
                     <td className="px-5 py-2.5 text-gray-600">{p.code}</td>
                     <td className="px-5 py-2.5 text-gray-600">{p.city ?? "—"}</td>
+                    <td className="px-5 py-2.5 text-gray-600">{p.currency}</td>
                     <td className="px-5 py-2.5 text-gray-600">{p.buildings?.[0]?.count ?? 0}</td>
                     <td className="px-5 py-2.5 text-gray-600">{p.restaurants?.[0]?.count ?? 0}</td>
                     <td className="px-5 py-2.5">
@@ -89,6 +92,16 @@ export default async function PropertiesPage() {
             <div>
               <Label>GSTIN</Label>
               <Input name="gstin" />
+            </div>
+            <div>
+              <Label>Currency</Label>
+              <Select name="currency" defaultValue="INR">
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
             </div>
             <SubmitButton>Add property</SubmitButton>
           </form>

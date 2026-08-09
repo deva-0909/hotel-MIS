@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { addOrderItem } from "@/app/actions/restaurant";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Select, Input, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { OrderLifecycleActions, RemoveItemButton } from "./order-actions";
@@ -76,7 +77,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title={`Items — total ₹${total.toFixed(2)}`} />
+          <CardHeader title={`Items — total ${formatMoney(total, org.currency)}`} />
           {!items?.length ? (
             <EmptyState>No items added yet.</EmptyState>
           ) : (
@@ -95,7 +96,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <tr key={item.id} className="border-b border-gray-50 last:border-0">
                     <td className="px-5 py-2.5 text-gray-800">{item.menu_items?.name}</td>
                     <td className="px-5 py-2.5 text-gray-600">{item.quantity}</td>
-                    <td className="px-5 py-2.5 text-gray-600">₹{(item.quantity * item.unit_price).toFixed(2)}</td>
+                    <td className="px-5 py-2.5 text-gray-600">{formatMoney(item.quantity * item.unit_price, org.currency)}</td>
                     <td className="px-5 py-2.5 capitalize text-gray-500">{item.status}</td>
                     <td className="px-5 py-2.5 text-right">
                       {item.status !== "cancelled" && order.status === "open" && (
@@ -116,7 +117,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <option value="">Select item…</option>
                   {menuItems?.map((mi) => (
                     <option key={mi.id} value={mi.id}>
-                      {mi.name} — ₹{mi.price}
+                      {mi.name} — {formatMoney(mi.price, org.currency)}
                     </option>
                   ))}
                 </Select>

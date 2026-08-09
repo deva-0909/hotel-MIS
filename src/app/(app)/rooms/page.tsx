@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { createRoom, createRoomType } from "@/app/actions/hotel";
 import { adoptRoomTypeTemplate } from "@/app/actions/templates";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Breadcrumb, Input, Select, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { RoomStatusControl } from "@/components/room-status-control";
@@ -61,7 +62,7 @@ export default async function RoomsPage() {
                     <td className="px-5 py-2.5 text-gray-600">
                       {room.floors?.buildings?.name} / {room.floors?.name}
                     </td>
-                    <td className="px-5 py-2.5 text-gray-600">₹{room.room_types?.base_rate}</td>
+                    <td className="px-5 py-2.5 text-gray-600">{formatMoney(room.room_types?.base_rate ?? 0, org.currency)}</td>
                     <td className="px-5 py-2.5">
                       <div className="flex items-center gap-2">
                         <Badge color={STATUS_COLOR[room.status]}>{room.status.replace(/_/g, " ")}</Badge>
@@ -82,7 +83,7 @@ export default async function RoomsPage() {
               {roomTypes?.map((rt) => (
                 <div key={rt.id} className="flex items-center justify-between px-5 py-2 text-sm">
                   <span className="text-gray-700">{rt.name}</span>
-                  <span className="text-gray-500">₹{rt.base_rate}/night</span>
+                  <span className="text-gray-500">{formatMoney(rt.base_rate, org.currency)}/night</span>
                 </div>
               ))}
               {!roomTypes?.length && <EmptyState>No room types yet.</EmptyState>}
@@ -116,7 +117,7 @@ export default async function RoomsPage() {
                     <option value="">Select template…</option>
                     {roomTypeTemplates.map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.name} — ₹{t.base_rate}
+                        {t.name} — {formatMoney(t.base_rate, org.currency)}
                       </option>
                     ))}
                   </Select>

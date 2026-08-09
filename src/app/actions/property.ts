@@ -23,6 +23,7 @@ export async function createProperty(formData: FormData) {
       city: (formData.get("city") as string) || null,
       address: (formData.get("address") as string) || null,
       gstin: (formData.get("gstin") as string) || null,
+      currency: (formData.get("currency") as string) || "INR",
     })
     .select("id")
     .single();
@@ -40,6 +41,16 @@ export async function togglePropertyActive(propertyId: string, isActive: boolean
   const { error } = await supabase.from("properties").update({ is_active: isActive }).eq("id", propertyId);
   if (error) throw new Error(error.message);
   revalidatePath("/organization/properties");
+}
+
+export async function updatePropertyCurrency(propertyId: string, formData: FormData) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase
+    .from("properties")
+    .update({ currency: String(formData.get("currency")) })
+    .eq("id", propertyId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/organization/properties/${propertyId}`);
 }
 
 export async function createBuilding(propertyId: string, formData: FormData) {

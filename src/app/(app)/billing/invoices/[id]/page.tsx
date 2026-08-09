@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { addInvoiceLineItem, recordPayment, updateInvoiceAdjustments } from "@/app/actions/billing";
 import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
@@ -17,6 +19,7 @@ const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const org = await getOrgContext();
 
   const { data: invoice } = await supabase
     .from("invoices")
@@ -94,8 +97,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                     <tr key={li.id} className="border-b border-gray-50 last:border-0">
                       <td className="px-5 py-2.5 text-gray-800">{li.description}</td>
                       <td className="px-5 py-2.5 text-gray-600">{li.quantity}</td>
-                      <td className="px-5 py-2.5 text-gray-600">₹{li.unit_price}</td>
-                      <td className="px-5 py-2.5 text-gray-800">₹{Number(li.amount).toFixed(2)}</td>
+                      <td className="px-5 py-2.5 text-gray-600">{formatMoney(li.unit_price, org.currency)}</td>
+                      <td className="px-5 py-2.5 text-gray-800">{formatMoney(li.amount, org.currency)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -122,7 +125,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <div className="space-y-1 border-t border-gray-100 px-5 py-4 text-sm">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>₹{invoice.subtotal}</span>
+                <span>{formatMoney(invoice.subtotal, org.currency)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>
@@ -131,23 +134,23 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                     (auto, manage rates)
                   </Link>
                 </span>
-                <span>₹{invoice.tax_amount}</span>
+                <span>{formatMoney(invoice.tax_amount, org.currency)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Discount</span>
-                <span>−₹{invoice.discount_amount}</span>
+                <span>−{formatMoney(invoice.discount_amount, org.currency)}</span>
               </div>
               <div className="flex justify-between border-t border-gray-100 pt-1 font-semibold text-gray-900">
                 <span>Total</span>
-                <span>₹{invoice.total_amount}</span>
+                <span>{formatMoney(invoice.total_amount, org.currency)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Paid</span>
-                <span>₹{invoice.amount_paid}</span>
+                <span>{formatMoney(invoice.amount_paid, org.currency)}</span>
               </div>
               <div className="flex justify-between font-semibold text-gray-900">
                 <span>Balance due</span>
-                <span>₹{balanceDue.toFixed(2)}</span>
+                <span>{formatMoney(balanceDue, org.currency)}</span>
               </div>
             </div>
 
@@ -175,7 +178,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               {payments.map((p) => (
                 <div key={p.id} className="flex items-center justify-between px-5 py-2.5 text-sm">
                   <div>
-                    <div className="text-gray-800">₹{p.amount}</div>
+                    <div className="text-gray-800">{formatMoney(p.amount, org.currency)}</div>
                     <div className="text-xs capitalize text-gray-400">
                       {p.method.replace(/_/g, " ")} {p.reference_number ? `· ${p.reference_number}` : ""}
                     </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Breadcrumb, StatTile, EmptyState, Input, Label, Select } from "@/components/ui";
+import { formatMoney } from "@/lib/format-money";
 import { SubmitButton } from "@/components/submit-button";
 import { createVenue, createMenuPackage } from "@/app/actions/banquet";
 import { adoptBanquetPackageTemplate } from "@/app/actions/templates";
@@ -104,7 +105,7 @@ export default async function BanquetDepartmentPage() {
 
         <Card>
           <CardHeader title="New event booking" />
-          <NewEventForm venues={venues ?? []} />
+          <NewEventForm venues={venues ?? []} currency={org.currency} />
         </Card>
       </div>
 
@@ -170,7 +171,7 @@ export default async function BanquetDepartmentPage() {
                   <tr key={p.id} className="border-b border-gray-50 last:border-0">
                     <td className="px-5 py-2.5 font-medium text-gray-900">{p.name}</td>
                     <td className="px-5 py-2.5 text-gray-600">{p.description ?? "—"}</td>
-                    <td className="px-5 py-2.5 text-gray-600">₹{p.price_per_cover}</td>
+                    <td className="px-5 py-2.5 text-gray-600">{formatMoney(p.price_per_cover, org.currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -199,7 +200,7 @@ export default async function BanquetDepartmentPage() {
                   <option value="">Select template…</option>
                   {packageTemplates.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name} — ₹{t.price_per_cover}/cover
+                      {t.name} — {formatMoney(t.price_per_cover, org.currency)}/cover
                     </option>
                   ))}
                 </Select>

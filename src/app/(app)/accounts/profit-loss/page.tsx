@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Breadcrumb, EmptyState } from "@/components/ui";
 
 export default async function ProfitLossPage() {
@@ -38,7 +39,7 @@ export default async function ProfitLossPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title={`Revenue — ₹${totalRevenue.toFixed(2)}`} />
+          <CardHeader title={`Revenue — ${formatMoney(totalRevenue, org.currency)}`} />
           {!revenue.length ? (
             <EmptyState>No revenue posted yet.</EmptyState>
           ) : (
@@ -46,7 +47,7 @@ export default async function ProfitLossPage() {
               {revenue.map((a) => (
                 <div key={a.id} className="flex items-center justify-between px-5 py-2 text-sm">
                   <span className="text-gray-700">{a.name}</span>
-                  <span className="text-gray-900">₹{a.net.toFixed(2)}</span>
+                  <span className="text-gray-900">{formatMoney(a.net, org.currency)}</span>
                 </div>
               ))}
             </div>
@@ -54,7 +55,7 @@ export default async function ProfitLossPage() {
         </Card>
 
         <Card>
-          <CardHeader title={`Expenses — ₹${totalExpense.toFixed(2)}`} />
+          <CardHeader title={`Expenses — ${formatMoney(totalExpense, org.currency)}`} />
           {!expense.length ? (
             <EmptyState>No expenses posted yet.</EmptyState>
           ) : (
@@ -62,7 +63,7 @@ export default async function ProfitLossPage() {
               {expense.map((a) => (
                 <div key={a.id} className="flex items-center justify-between px-5 py-2 text-sm">
                   <span className="text-gray-700">{a.name}</span>
-                  <span className="text-gray-900">₹{a.net.toFixed(2)}</span>
+                  <span className="text-gray-900">{formatMoney(a.net, org.currency)}</span>
                 </div>
               ))}
             </div>
@@ -71,7 +72,7 @@ export default async function ProfitLossPage() {
       </div>
 
       <Card className={`px-5 py-4 text-lg font-semibold ${netProfit >= 0 ? "text-emerald-700" : "text-red-700"}`}>
-        Net {netProfit >= 0 ? "Profit" : "Loss"}: ₹{Math.abs(netProfit).toFixed(2)}
+        Net {netProfit >= 0 ? "Profit" : "Loss"}: {formatMoney(Math.abs(netProfit), org.currency)}
       </Card>
     </div>
   );

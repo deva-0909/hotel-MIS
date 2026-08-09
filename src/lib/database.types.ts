@@ -1490,6 +1490,7 @@ export type Database = {
           city: string | null
           code: string
           created_at: string
+          currency: string
           gstin: string | null
           id: string
           is_active: boolean
@@ -1501,6 +1502,7 @@ export type Database = {
           city?: string | null
           code: string
           created_at?: string
+          currency?: string
           gstin?: string | null
           id?: string
           is_active?: boolean
@@ -1512,6 +1514,7 @@ export type Database = {
           city?: string | null
           code?: string
           created_at?: string
+          currency?: string
           gstin?: string | null
           id?: string
           is_active?: boolean

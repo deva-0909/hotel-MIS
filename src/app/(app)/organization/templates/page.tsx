@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { createBanquetPackageTemplate, createMenuCategoryTemplate, createRoomTypeTemplate } from "@/app/actions/templates";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Breadcrumb, Input, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 
@@ -35,7 +36,7 @@ export default async function CorporateTemplatesPage() {
                 <div key={t.id} className="flex items-center justify-between px-5 py-2 text-sm">
                   <span className="text-gray-700">{t.name}</span>
                   <span className="text-gray-500">
-                    ₹{t.base_rate} · {t.max_occupancy} pax
+                    {formatMoney(t.base_rate, org.currency)} · {t.max_occupancy} pax
                   </span>
                 </div>
               ))}
@@ -99,7 +100,7 @@ export default async function CorporateTemplatesPage() {
               {banquetPackageTemplates.map((t) => (
                 <div key={t.id} className="flex items-center justify-between px-5 py-2 text-sm">
                   <span className="text-gray-700">{t.name}</span>
-                  <span className="text-gray-500">₹{t.price_per_cover}/cover</span>
+                  <span className="text-gray-500">{formatMoney(t.price_per_cover, org.currency)}/cover</span>
                 </div>
               ))}
             </div>

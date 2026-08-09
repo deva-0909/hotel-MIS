@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, StatTile, Badge, Breadcrumb, EmptyState } from "@/components/ui";
 
 const DEPARTMENTS = [
@@ -79,8 +80,8 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatTile label="Rooms" value={totalRooms} />
         <StatTile label="Occupancy" value={`${occupancyPct}%`} sub={`${occupied} of ${totalRooms} rooms`} />
-        <StatTile label="ADR" value={`₹${adr.toFixed(0)}`} />
-        <StatTile label="RevPAR" value={`₹${revpar.toFixed(0)}`} />
+        <StatTile label="ADR" value={formatMoney(adr, org.currency)} />
+        <StatTile label="RevPAR" value={formatMoney(revpar, org.currency)} />
       </div>
 
       <div>

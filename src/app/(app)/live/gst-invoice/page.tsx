@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Breadcrumb, EmptyState } from "@/components/ui";
 
 export default async function GstInvoicePage({ searchParams }: { searchParams: Promise<{ invoice?: string }> }) {
@@ -29,8 +30,12 @@ export default async function GstInvoicePage({ searchParams }: { searchParams: P
     ? await supabase.from("invoice_line_items").select("description, quantity, unit_price, amount").eq("invoice_id", activeId)
     : { data: null };
 
+  // Presented as an even CGST/SGST split of whatever tax_amount actually
+  // computed to (see /accounts/tax-rates) — not a fixed 9%/9%, since the
+  // configured rate can be anything.
   const cgst = invoice ? Number(invoice.tax_amount) / 2 : 0;
   const sgst = cgst;
+  const effectiveRate = invoice && Number(invoice.subtotal) > 0 ? (Number(invoice.tax_amount) / Number(invoice.subtotal)) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -78,8 +83,8 @@ export default async function GstInvoicePage({ searchParams }: { searchParams: P
                     <tr key={i} className="border-b border-gray-50 last:border-0">
                       <td className="px-5 py-2.5 text-gray-800">{li.description}</td>
                       <td className="px-5 py-2.5 text-gray-600">{li.quantity}</td>
-                      <td className="px-5 py-2.5 text-gray-600">₹{li.unit_price}</td>
-                      <td className="px-5 py-2.5 text-gray-800">₹{Number(li.amount).toFixed(2)}</td>
+                      <td className="px-5 py-2.5 text-gray-600">{formatMoney(li.unit_price, org.currency)}</td>
+                      <td className="px-5 py-2.5 text-gray-800">{formatMoney(li.amount, org.currency)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -87,19 +92,19 @@ export default async function GstInvoicePage({ searchParams }: { searchParams: P
               <div className="space-y-1 border-t border-black/10 px-5 py-4 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>₹{invoice.subtotal}</span>
+                  <span>{formatMoney(invoice.subtotal, org.currency)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>CGST @ 9%</span>
-                  <span>₹{cgst.toFixed(2)}</span>
+                  <span>CGST @ {(effectiveRate / 2).toFixed(2)}%</span>
+                  <span>{formatMoney(cgst, org.currency)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>SGST @ 9%</span>
-                  <span>₹{sgst.toFixed(2)}</span>
+                  <span>SGST @ {(effectiveRate / 2).toFixed(2)}%</span>
+                  <span>{formatMoney(sgst, org.currency)}</span>
                 </div>
                 <div className="flex justify-between border-t border-black/10 pt-1 font-semibold text-gray-900">
                   <span>Total Payable</span>
-                  <span>₹{invoice.total_amount}</span>
+                  <span>{formatMoney(invoice.total_amount, org.currency)}</span>
                 </div>
                 {org.gstin && (
                   <div className="flex justify-between pt-2 text-xs text-gray-400">

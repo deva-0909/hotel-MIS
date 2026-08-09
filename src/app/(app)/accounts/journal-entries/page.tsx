@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { Card, Badge, Breadcrumb, Button, EmptyState } from "@/components/ui";
+import { formatMoney } from "@/lib/format-money";
 
 export default async function JournalEntriesPage() {
   const supabase = await createClient();
@@ -53,7 +54,7 @@ export default async function JournalEntriesPage() {
                     <td className="px-5 py-2.5">
                       <Badge color={e.source_table ? "blue" : "gray"}>{e.source_table ? "Auto-posted" : "Manual"}</Badge>
                     </td>
-                    <td className="px-5 py-2.5 text-gray-800">₹{total.toFixed(2)}</td>
+                    <td className="px-5 py-2.5 text-gray-800">{formatMoney(total, org.currency)}</td>
                   </tr>
                 );
               })}

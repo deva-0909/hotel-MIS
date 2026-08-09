@@ -12,12 +12,13 @@ export async function getOrgContext() {
   let propertyName = "Property";
   let city: string | null = null;
   let gstin: string | null = null;
+  let currency = "INR";
 
   const user = userData?.user;
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("property_id, properties(id, name, city, gstin)")
+      .select("property_id, properties(id, name, city, gstin, currency)")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -26,6 +27,7 @@ export async function getOrgContext() {
       propertyName = profile.properties.name;
       city = profile.properties.city;
       gstin = profile.properties.gstin;
+      currency = profile.properties.currency;
     }
   }
 
@@ -42,5 +44,6 @@ export async function getOrgContext() {
     hotelName: propertyName,
     city,
     gstin,
+    currency,
   };
 }

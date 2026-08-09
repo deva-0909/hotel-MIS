@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { addPurchaseOrderItem } from "@/app/actions/inventory";
 import { Card, CardHeader, Badge, Select, Input, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
@@ -9,6 +11,7 @@ import { PO_STATUS_COLOR } from "@/lib/status-colors";
 export default async function PurchaseOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const org = await getOrgContext();
 
   const { data: po } = await supabase
     .from("purchase_orders")
@@ -45,7 +48,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: Prom
       </div>
 
       <Card>
-        <CardHeader title={`Line items — value ₹${totalValue.toFixed(2)}`} />
+        <CardHeader title={`Line items — value ${formatMoney(totalValue, org.currency)}`} />
         {!items?.length ? (
           <EmptyState>No line items yet.</EmptyState>
         ) : (
@@ -66,7 +69,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: Prom
                   <td className="px-5 py-2.5 text-gray-600">
                     {item.quantity} {item.inventory_items?.unit}
                   </td>
-                  <td className="px-5 py-2.5 text-gray-600">₹{item.unit_cost}</td>
+                  <td className="px-5 py-2.5 text-gray-600">{formatMoney(item.unit_cost, org.currency)}</td>
                   <td className="px-5 py-2.5 text-gray-600">
                     {item.received_quantity} {item.inventory_items?.unit}
                   </td>

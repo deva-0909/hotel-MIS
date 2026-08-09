@@ -16,7 +16,7 @@ export default async function NewJournalEntryPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-gray-900">New journal entry</h1>
-      <JournalEntryForm accounts={accounts ?? []} />
+      <JournalEntryForm accounts={accounts ?? []} currency={org.currency} />
     </div>
   );
 }

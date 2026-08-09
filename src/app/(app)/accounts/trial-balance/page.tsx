@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Breadcrumb, EmptyState } from "@/components/ui";
 
 export default async function TrialBalancePage() {
@@ -59,8 +60,8 @@ export default async function TrialBalancePage() {
                     {r.code} — {r.name}
                   </td>
                   <td className="px-3 py-2 capitalize text-gray-500">{r.account_type}</td>
-                  <td className="px-3 py-2 text-gray-700">{r.debit ? `₹${r.debit.toFixed(2)}` : ""}</td>
-                  <td className="px-3 py-2 text-gray-700">{r.credit ? `₹${r.credit.toFixed(2)}` : ""}</td>
+                  <td className="px-3 py-2 text-gray-700">{r.debit ? formatMoney(r.debit, org.currency) : ""}</td>
+                  <td className="px-3 py-2 text-gray-700">{r.credit ? formatMoney(r.credit, org.currency) : ""}</td>
                 </tr>
               ))}
             </tbody>
@@ -69,8 +70,8 @@ export default async function TrialBalancePage() {
                 <td className="px-5 py-2" colSpan={2}>
                   Total
                 </td>
-                <td className="px-3 py-2">₹{totalDebit.toFixed(2)}</td>
-                <td className="px-3 py-2">₹{totalCredit.toFixed(2)}</td>
+                <td className="px-3 py-2">{formatMoney(totalDebit, org.currency)}</td>
+                <td className="px-3 py-2">{formatMoney(totalCredit, org.currency)}</td>
               </tr>
             </tfoot>
           </table>

@@ -14,7 +14,7 @@ export default async function NewReservationPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-gray-900">New reservation</h1>
-      <ReservationForm guests={guests ?? []} roomTypes={roomTypes ?? []} rooms={rooms ?? []} />
+      <ReservationForm guests={guests ?? []} roomTypes={roomTypes ?? []} rooms={rooms ?? []} currency={org.currency} />
     </div>
   );
 }

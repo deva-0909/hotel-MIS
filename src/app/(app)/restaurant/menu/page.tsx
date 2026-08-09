@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { createMenuCategory, createMenuItem } from "@/app/actions/restaurant";
 import { adoptMenuCategoryTemplate } from "@/app/actions/templates";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Breadcrumb, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { MenuItemToggle } from "@/components/menu-item-toggle";
@@ -71,10 +72,14 @@ export default async function MenuPage() {
                         {item.name}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2 text-gray-500">{item.menu_categories?.name}</td>
-                      <td className="px-3 py-2 text-gray-700">₹{item.price}</td>
-                      <td className="px-3 py-2 text-gray-700">{item.parcel_price ? `₹${item.parcel_price}` : "—"}</td>
-                      <td className="px-3 py-2 text-gray-700">{item.own_delivery_price ? `₹${item.own_delivery_price}` : "—"}</td>
-                      <td className="px-3 py-2 text-gray-700">{item.aggregator_price ? `₹${item.aggregator_price}` : "—"}</td>
+                      <td className="px-3 py-2 text-gray-700">{formatMoney(item.price, org.currency)}</td>
+                      <td className="px-3 py-2 text-gray-700">{item.parcel_price ? formatMoney(item.parcel_price, org.currency) : "—"}</td>
+                      <td className="px-3 py-2 text-gray-700">
+                        {item.own_delivery_price ? formatMoney(item.own_delivery_price, org.currency) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-gray-700">
+                        {item.aggregator_price ? formatMoney(item.aggregator_price, org.currency) : "—"}
+                      </td>
                       <td className="px-3 py-2">
                         <MenuItemToggle itemId={item.id} available={item.is_available} />
                       </td>

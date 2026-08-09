@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Breadcrumb, StatTile } from "@/components/ui";
 
 export default async function RegionalDashboardPage() {
@@ -9,7 +10,7 @@ export default async function RegionalDashboardPage() {
   monthStart.setDate(1);
 
   const [{ data: properties }, { data: rooms }, { data: monthInvoices }] = await Promise.all([
-    supabase.from("properties").select("id, name, city").order("name"),
+    supabase.from("properties").select("id, name, city, currency").order("name"),
     supabase.from("rooms").select("property_id, status"),
     supabase.from("invoices").select("property_id, amount_paid").gte("created_at", monthStart.toISOString()),
   ]);
@@ -17,6 +18,9 @@ export default async function RegionalDashboardPage() {
   const occupied = rooms?.filter((r) => r.status === "occupied").length ?? 0;
   const occupancy = rooms?.length ? Math.round((occupied / rooms.length) * 100) : 0;
   const revenueMtd = monthInvoices?.reduce((sum, i) => sum + Number(i.amount_paid), 0) ?? 0;
+  const distinctCurrencies = new Set((properties ?? []).map((p) => p.currency));
+  const revenueLabel =
+    distinctCurrencies.size <= 1 ? formatMoney(revenueMtd, org.currency) : `${revenueMtd.toFixed(0)} (mixed currencies)`;
 
   const roomsByProperty = new Map<string, { total: number; occupied: number }>();
   for (const r of rooms ?? []) {
@@ -36,7 +40,7 @@ export default async function RegionalDashboardPage() {
         <StatTile label="Properties" value={properties?.length ?? 0} />
         <StatTile label="Rooms" value={rooms?.length ?? 0} />
         <StatTile label="Occupancy" value={`${occupancy}%`} />
-        <StatTile label="Revenue MTD" value={`₹${revenueMtd.toFixed(0)}`} />
+        <StatTile label="Revenue MTD" value={revenueLabel} />
       </div>
 
       <Card>

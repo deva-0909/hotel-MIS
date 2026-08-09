@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
-import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, StatTile } from "@/components/ui";
+import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, Select, StatTile } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
-import { createBuilding, createFloor, createRestaurant } from "@/app/actions/property";
+import { createBuilding, createFloor, createRestaurant, updatePropertyCurrency } from "@/app/actions/property";
+import { CURRENCIES } from "@/lib/currencies";
 import { RestaurantActiveToggle, PropertyActiveToggle } from "./property-actions";
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,7 +14,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
   const { data: property } = await supabase
     .from("properties")
-    .select("id, name, code, city, address, gstin, is_active")
+    .select("id, name, code, city, address, gstin, currency, is_active")
     .eq("id", id)
     .maybeSingle();
 
@@ -117,6 +118,23 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               <Input name="description" placeholder="Cuisine / concept" />
             </div>
             <SubmitButton variant="secondary">Add restaurant</SubmitButton>
+          </form>
+        </Card>
+
+        <Card>
+          <CardHeader title="Property settings" />
+          <form action={updatePropertyCurrency.bind(null, property.id)} className="flex items-end gap-2 px-5 py-4">
+            <div className="flex-1">
+              <Label>Currency</Label>
+              <Select name="currency" defaultValue={property.currency}>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <SubmitButton variant="secondary">Save</SubmitButton>
           </form>
         </Card>
       </div>

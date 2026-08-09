@@ -3,6 +3,7 @@ import { getOrgContext } from "@/lib/org-context";
 import { createInventoryCategory, createInventoryItem, recordStockMovement } from "@/app/actions/inventory";
 import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
+import { formatMoney } from "@/lib/format-money";
 
 export default async function InventoryItemsPage() {
   const supabase = await createClient();
@@ -74,7 +75,7 @@ export default async function InventoryItemsPage() {
                       <td className="px-5 py-2.5 text-gray-500">
                         {item.reorder_level} {item.unit}
                       </td>
-                      <td className="px-5 py-2.5 text-gray-600">₹{item.unit_cost}</td>
+                      <td className="px-5 py-2.5 text-gray-600">{formatMoney(item.unit_cost, org.currency)}</td>
                     </tr>
                   );
                 })}

@@ -21,8 +21,9 @@ export async function wizardCreateProperty(formData: FormData) {
       city: (formData.get("city") as string) || null,
       address: (formData.get("address") as string) || null,
       gstin: (formData.get("gstin") as string) || null,
+      currency: (formData.get("currency") as string) || "INR",
     })
-    .select("id, name, code")
+    .select("id, name, code, currency")
     .single();
   if (error) throw new Error(error.message);
 

@@ -23,7 +23,13 @@ export function EventStatusControl({ eventId, status }: { eventId: string; statu
   );
 }
 
-export function NewEventForm({ venues }: { venues: { id: string; name: string; capacity: number }[] }) {
+export function NewEventForm({
+  venues,
+  currency,
+}: {
+  venues: { id: string; name: string; capacity: number }[];
+  currency: string;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -74,7 +80,7 @@ export function NewEventForm({ venues }: { venues: { id: string; name: string; c
         <Input name="covers" type="number" min={0} />
       </div>
       <div>
-        <Label>Value (₹)</Label>
+        <Label>Value ({currency})</Label>
         <Input name="value_amount" type="number" min={0} step="0.01" />
       </div>
 

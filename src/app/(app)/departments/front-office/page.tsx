@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Breadcrumb, StatTile, EmptyState, Button } from "@/components/ui";
 
 export default async function FrontOfficeDepartmentPage() {
@@ -64,7 +65,7 @@ export default async function FrontOfficeDepartmentPage() {
                     <td className="px-5 py-2.5">
                       <Badge color={r.status === "checked_in" ? "blue" : "purple"}>{r.status.replace(/_/g, " ")}</Badge>
                     </td>
-                    <td className="px-5 py-2.5 text-gray-600">₹{r.rate_per_night}</td>
+                    <td className="px-5 py-2.5 text-gray-600">{formatMoney(r.rate_per_night, org.currency)}</td>
                   </tr>
                 ))}
               </tbody>

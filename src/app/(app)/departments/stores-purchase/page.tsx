@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Badge, Breadcrumb, StatTile, EmptyState, Button } from "@/components/ui";
 import { PO_STATUS_COLOR } from "@/lib/status-colors";
+import { formatMoney } from "@/lib/format-money";
 
 export default async function StoresPurchaseDepartmentPage() {
   const supabase = await createClient();
@@ -42,7 +43,7 @@ export default async function StoresPurchaseDepartmentPage() {
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatTile label="Open POs" value={openPOs} />
-        <StatTile label="Stock Value" value={`₹${stockValue.toFixed(0)}`} />
+        <StatTile label="Stock Value" value={formatMoney(stockValue, org.currency)} />
         <StatTile label="Low-Stock SKUs" value={lowStock.length} />
         <StatTile label="Total Items" value={items?.length ?? 0} />
       </div>

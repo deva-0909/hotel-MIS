@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createJournalEntry } from "@/app/actions/ledger";
+import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Input, Label, Select, Button } from "@/components/ui";
 
 type Account = { id: string; code: string; name: string };
@@ -10,7 +11,7 @@ type Line = { account_id: string; debit: string; credit: string };
 
 const EMPTY_LINE: Line = { account_id: "", debit: "", credit: "" };
 
-export function JournalEntryForm({ accounts }: { accounts: Account[] }) {
+export function JournalEntryForm({ accounts, currency }: { accounts: Account[]; currency: string }) {
   const router = useRouter();
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
@@ -131,7 +132,7 @@ export function JournalEntryForm({ accounts }: { accounts: Account[] }) {
 
         <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-sm">
           <span className={balanced ? "text-emerald-600" : "text-amber-600"}>
-            Debit ₹{totalDebit.toFixed(2)} · Credit ₹{totalCredit.toFixed(2)}
+            Debit {formatMoney(totalDebit, currency)} · Credit {formatMoney(totalCredit, currency)}
           </span>
           {!balanced && <span className="text-amber-600">Out of balance</span>}
         </div>

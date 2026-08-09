@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
+import { formatMoney } from "@/lib/format-money";
 import { addMiscCharge } from "@/app/actions/hotel";
 import { Card, CardHeader, Badge, Input, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
@@ -17,6 +19,7 @@ const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red" |
 export default async function ReservationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const org = await getOrgContext();
 
   const { data: reservation } = await supabase
     .from("reservations")
@@ -87,7 +90,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
               </div>
               <div>
                 <div className="text-xs text-gray-400">Rate/night</div>
-                <div className="text-gray-800">₹{reservation.rate_per_night}</div>
+                <div className="text-gray-800">{formatMoney(reservation.rate_per_night, org.currency)}</div>
               </div>
               <div>
                 <div className="text-xs text-gray-400">Actual check-in / out</div>
@@ -106,7 +109,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
           </Card>
 
           <Card>
-            <CardHeader title={`Folio charges — total ₹${total.toFixed(2)}`} />
+            <CardHeader title={`Folio charges — total ${formatMoney(total, org.currency)}`} />
             {!charges?.length ? (
               <EmptyState>No charges posted yet.</EmptyState>
             ) : (
@@ -123,7 +126,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                     <tr key={c.id} className="border-b border-gray-50 last:border-0">
                       <td className="px-5 py-2.5 text-gray-800">{c.description}</td>
                       <td className="px-5 py-2.5 capitalize text-gray-500">{c.charge_type}</td>
-                      <td className="px-5 py-2.5 text-gray-800">₹{Number(c.amount).toFixed(2)}</td>
+                      <td className="px-5 py-2.5 text-gray-800">{formatMoney(c.amount, org.currency)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -156,7 +159,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                   className="flex items-center justify-between px-5 py-2.5 text-sm hover:bg-gray-50"
                 >
                   <span className="font-medium text-slate-900">{inv.invoice_number}</span>
-                  <span className="text-gray-500">₹{inv.total_amount}</span>
+                  <span className="text-gray-500">{formatMoney(inv.total_amount, org.currency)}</span>
                 </Link>
               ))}
             </div>
