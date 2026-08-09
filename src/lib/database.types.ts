@@ -46,14 +46,57 @@ export type Database = {
           },
         ]
       }
+      banquet_event_items: {
+        Row: {
+          covers: number
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          package_id: string
+        }
+        Insert: {
+          covers?: number
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          package_id: string
+        }
+        Update: {
+          covers?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          package_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banquet_event_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "banquet_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banquet_event_items_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "banquet_menu_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banquet_events: {
         Row: {
           client_name: string
           covers: number
           created_at: string
-          event_date: string
+          end_at: string
           event_name: string
           id: string
+          start_at: string
           status: string
           value_amount: number
           venue_id: string | null
@@ -62,9 +105,10 @@ export type Database = {
           client_name: string
           covers?: number
           created_at?: string
-          event_date: string
+          end_at: string
           event_name: string
           id?: string
+          start_at: string
           status?: string
           value_amount?: number
           venue_id?: string | null
@@ -73,9 +117,10 @@ export type Database = {
           client_name?: string
           covers?: number
           created_at?: string
-          event_date?: string
+          end_at?: string
           event_name?: string
           id?: string
+          start_at?: string
           status?: string
           value_amount?: number
           venue_id?: string | null
@@ -90,18 +135,45 @@ export type Database = {
           },
         ]
       }
+      banquet_menu_packages: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          price_per_cover: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          price_per_cover?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price_per_cover?: number
+        }
+        Relationships: []
+      }
       banquet_venues: {
         Row: {
+          buffer_minutes: number
           capacity: number
           id: string
           name: string
         }
         Insert: {
+          buffer_minutes?: number
           capacity?: number
           id?: string
           name: string
         }
         Update: {
+          buffer_minutes?: number
           capacity?: number
           id?: string
           name?: string
@@ -367,7 +439,7 @@ export type Database = {
           {
             foreignKeyName: "housekeeping_tasks_room_id_fkey"
             columns: ["room_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
@@ -1503,6 +1575,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      banquet_venue_conflicts: {
+        Args: {
+          p_end_at: string
+          p_exclude_event_id?: string
+          p_start_at: string
+          p_venue_id: string
+        }
+        Returns: {
+          end_at: string
+          event_name: string
+          id: string
+          start_at: string
+        }[]
+      }
       generate_invoice_from_reservation: {
         Args: { p_reservation_id: string; p_staff_id: string }
         Returns: string

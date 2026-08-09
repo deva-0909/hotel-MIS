@@ -8,3 +8,10 @@ export const PO_STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray"
   rejected: "red",
   cancelled: "red",
 };
+
+export const EVENT_STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red" | "purple" | "gold"> = {
+  tentative: "amber",
+  confirmed: "blue",
+  completed: "green",
+  cancelled: "red",
+};
