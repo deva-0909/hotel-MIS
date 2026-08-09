@@ -6,21 +6,29 @@ import { requireUser } from "@/lib/require-user";
 
 export async function createTable(formData: FormData) {
   const { supabase } = await requireUser();
+  const serviceAreaId = (formData.get("service_area_id") as string) || null;
   const { error } = await supabase.from("restaurant_tables").insert({
     restaurant_id: String(formData.get("restaurant_id")),
     table_number: String(formData.get("table_number")),
     capacity: Number(formData.get("capacity") ?? 2),
+    service_area_id: serviceAreaId,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/restaurant/tables");
 }
 
+// A category's kitchen_id is what routes its items' tickets to a specific
+// kitchen's queue (see /departments/kitchen) — leaving it unset keeps the
+// item local to this restaurant's own property, matching pre-kitchens
+// behavior.
 export async function createMenuCategory(formData: FormData) {
   const { supabase } = await requireUser();
+  const kitchenId = (formData.get("kitchen_id") as string) || null;
   const { error } = await supabase.from("menu_categories").insert({
     restaurant_id: String(formData.get("restaurant_id")),
     name: String(formData.get("name")),
     sort_order: Number(formData.get("sort_order") ?? 0),
+    kitchen_id: kitchenId,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/restaurant/menu");

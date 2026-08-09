@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { createMenuCategory, createMenuItem } from "@/app/actions/restaurant";
-import { Card, CardHeader, Breadcrumb, Input, Label, Select, EmptyState } from "@/components/ui";
+import { Card, CardHeader, Badge, Breadcrumb, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { MenuItemToggle } from "@/components/menu-item-toggle";
 
@@ -9,15 +9,19 @@ export default async function MenuPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const { data: restaurants } = await supabase
-    .from("restaurants")
-    .select("id, name")
-    .eq("property_id", org.propertyId)
-    .order("name");
+  const [{ data: restaurants }, { data: kitchens }] = await Promise.all([
+    supabase.from("restaurants").select("id, name").eq("property_id", org.propertyId).order("name"),
+    supabase.from("kitchens").select("id, name").order("name"),
+  ]);
   const restaurantIds = (restaurants ?? []).map((r) => r.id);
+  const restaurantById = new Map((restaurants ?? []).map((r) => [r.id, r.name]));
 
   const { data: categories } = restaurantIds.length
-    ? await supabase.from("menu_categories").select("id, name, sort_order, restaurant_id").in("restaurant_id", restaurantIds).order("sort_order")
+    ? await supabase
+        .from("menu_categories")
+        .select("id, name, sort_order, restaurant_id, kitchen_id, kitchens(name)")
+        .in("restaurant_id", restaurantIds)
+        .order("sort_order")
     : { data: [] };
   const categoryIds = (categories ?? []).map((c) => c.id);
 
@@ -40,43 +44,73 @@ export default async function MenuPage() {
       </p>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="overflow-x-auto lg:col-span-2">
-          {!items?.length ? (
-            <EmptyState>No menu items yet.</EmptyState>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-black/10 text-left text-xs uppercase text-gray-400">
-                  <th className="px-4 py-2 font-medium">Item</th>
-                  <th className="px-3 py-2 font-medium">Category</th>
-                  <th className="px-3 py-2 font-medium">Dine-In</th>
-                  <th className="px-3 py-2 font-medium">Parcel</th>
-                  <th className="px-3 py-2 font-medium">Own Delivery</th>
-                  <th className="px-3 py-2 font-medium">Aggregator</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-50 last:border-0">
-                    <td className="whitespace-nowrap px-4 py-2 text-gray-800">
-                      <span className={`mr-2 inline-block h-2 w-2 rounded-full ${item.is_veg ? "bg-emerald-500" : "bg-red-500"}`} />
-                      {item.name}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-gray-500">{item.menu_categories?.name}</td>
-                    <td className="px-3 py-2 text-gray-700">₹{item.price}</td>
-                    <td className="px-3 py-2 text-gray-700">{item.parcel_price ? `₹${item.parcel_price}` : "—"}</td>
-                    <td className="px-3 py-2 text-gray-700">{item.own_delivery_price ? `₹${item.own_delivery_price}` : "—"}</td>
-                    <td className="px-3 py-2 text-gray-700">{item.aggregator_price ? `₹${item.aggregator_price}` : "—"}</td>
-                    <td className="px-3 py-2">
-                      <MenuItemToggle itemId={item.id} available={item.is_available} />
-                    </td>
+        <div className="space-y-6 lg:col-span-2">
+          <Card className="overflow-x-auto">
+            {!items?.length ? (
+              <EmptyState>No menu items yet.</EmptyState>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/10 text-left text-xs uppercase text-gray-400">
+                    <th className="px-4 py-2 font-medium">Item</th>
+                    <th className="px-3 py-2 font-medium">Category</th>
+                    <th className="px-3 py-2 font-medium">Dine-In</th>
+                    <th className="px-3 py-2 font-medium">Parcel</th>
+                    <th className="px-3 py-2 font-medium">Own Delivery</th>
+                    <th className="px-3 py-2 font-medium">Aggregator</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-50 last:border-0">
+                      <td className="whitespace-nowrap px-4 py-2 text-gray-800">
+                        <span className={`mr-2 inline-block h-2 w-2 rounded-full ${item.is_veg ? "bg-emerald-500" : "bg-red-500"}`} />
+                        {item.name}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-gray-500">{item.menu_categories?.name}</td>
+                      <td className="px-3 py-2 text-gray-700">₹{item.price}</td>
+                      <td className="px-3 py-2 text-gray-700">{item.parcel_price ? `₹${item.parcel_price}` : "—"}</td>
+                      <td className="px-3 py-2 text-gray-700">{item.own_delivery_price ? `₹${item.own_delivery_price}` : "—"}</td>
+                      <td className="px-3 py-2 text-gray-700">{item.aggregator_price ? `₹${item.aggregator_price}` : "—"}</td>
+                      <td className="px-3 py-2">
+                        <MenuItemToggle itemId={item.id} available={item.is_available} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Card>
+
+          <Card className="overflow-x-auto">
+            <CardHeader title="Categories & kitchen routing" />
+            {!categories?.length ? (
+              <EmptyState>No categories yet.</EmptyState>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/10 text-left text-xs uppercase text-gray-400">
+                    <th className="px-5 py-2 font-medium">Category</th>
+                    <th className="px-3 py-2 font-medium">Restaurant</th>
+                    <th className="px-3 py-2 font-medium">Kitchen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.map((c) => (
+                    <tr key={c.id} className="border-b border-gray-50 last:border-0">
+                      <td className="px-5 py-2 text-gray-800">{c.name}</td>
+                      <td className="px-3 py-2 text-gray-500">{restaurantById.get(c.restaurant_id) ?? "—"}</td>
+                      <td className="px-3 py-2">
+                        {c.kitchens?.name ? <Badge color="gold">{c.kitchens.name}</Badge> : <span className="text-gray-400">Local only</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        </div>
 
         <div className="space-y-6">
           <Card>
@@ -100,6 +134,17 @@ export default async function MenuPage() {
               <div>
                 <Label>Sort order</Label>
                 <Input name="sort_order" type="number" defaultValue={0} />
+              </div>
+              <div>
+                <Label>Kitchen (optional)</Label>
+                <Select name="kitchen_id" defaultValue="">
+                  <option value="">Local — this property&apos;s own kitchen</option>
+                  {kitchens?.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name}
+                    </option>
+                  ))}
+                </Select>
               </div>
               <SubmitButton>Add category</SubmitButton>
             </form>
