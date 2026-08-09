@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { addInvoiceLineItem, recordPayment, updateInvoiceAdjustments } from "@/app/actions/billing";
 import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
-import { CancelInvoiceButton } from "./invoice-actions";
+import { CancelInvoiceButton, PostInvoiceToLedgerButton, PostPaymentToLedgerButton } from "./invoice-actions";
 
 const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> = {
   draft: "gray",
@@ -35,6 +35,17 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const balanceDue = Number(invoice.total_amount) - Number(invoice.amount_paid);
   const editable = invoice.status !== "cancelled" && invoice.status !== "paid";
 
+  const paymentIds = (payments ?? []).map((p) => p.id);
+  const { data: journalSources } = await supabase
+    .from("journal_entries")
+    .select("id, source_table, source_id")
+    .in("source_table", ["invoices", "payments"])
+    .in("source_id", [invoice.id, ...paymentIds]);
+  const invoiceJournalEntry = journalSources?.find((j) => j.source_table === "invoices" && j.source_id === invoice.id);
+  const postedPaymentIds = new Set(
+    (journalSources ?? []).filter((j) => j.source_table === "payments").map((j) => j.source_id),
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -47,7 +58,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             {invoice.guests?.full_name} {invoice.guests?.phone ? `· ${invoice.guests.phone}` : ""}
           </p>
         </div>
-        {editable && !payments?.length && <CancelInvoiceButton invoiceId={invoice.id} />}
+        <div className="flex items-center gap-2">
+          {invoice.status !== "draft" && invoice.status !== "cancelled" && (
+            <>
+              {invoiceJournalEntry ? (
+                <Badge color="blue">Posted to ledger</Badge>
+              ) : (
+                <PostInvoiceToLedgerButton invoiceId={invoice.id} />
+              )}
+            </>
+          )}
+          {editable && !payments?.length && <CancelInvoiceButton invoiceId={invoice.id} />}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -156,7 +178,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                       {p.method.replace(/_/g, " ")} {p.reference_number ? `· ${p.reference_number}` : ""}
                     </div>
                   </div>
-                  <div className="text-xs text-gray-400">{new Date(p.paid_at).toLocaleDateString()}</div>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="text-xs text-gray-400">{new Date(p.paid_at).toLocaleDateString()}</div>
+                    {postedPaymentIds.has(p.id) ? (
+                      <span className="text-xs text-emerald-600">Posted</span>
+                    ) : (
+                      <PostPaymentToLedgerButton paymentId={p.id} invoiceId={invoice.id} />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

@@ -27,6 +27,10 @@ export async function createProperty(formData: FormData) {
     .select("id")
     .single();
   if (error) throw new Error(error.message);
+
+  const { error: seedError } = await supabase.rpc("seed_default_chart_of_accounts", { p_property_id: data.id });
+  if (seedError) throw new Error(seedError.message);
+
   revalidatePath("/organization/properties");
   redirect(`/organization/properties/${data.id}`);
 }
