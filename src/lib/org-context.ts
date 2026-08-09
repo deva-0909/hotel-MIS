@@ -13,12 +13,13 @@ export async function getOrgContext() {
   let city: string | null = null;
   let gstin: string | null = null;
   let currency = "INR";
+  let timezone = "Asia/Kolkata";
 
   const user = userData?.user;
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("property_id, properties(id, name, city, gstin, currency)")
+      .select("property_id, properties(id, name, city, gstin, currency, timezone)")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -28,6 +29,7 @@ export async function getOrgContext() {
       city = profile.properties.city;
       gstin = profile.properties.gstin;
       currency = profile.properties.currency;
+      timezone = profile.properties.timezone;
     }
   }
 
@@ -45,5 +47,6 @@ export async function getOrgContext() {
     city,
     gstin,
     currency,
+    timezone,
   };
 }

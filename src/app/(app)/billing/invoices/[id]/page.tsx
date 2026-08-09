@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
+import { formatDate } from "@/lib/format-datetime";
 import { addInvoiceLineItem, recordPayment, updateInvoiceAdjustments } from "@/app/actions/billing";
 import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
@@ -184,7 +185,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <div className="text-xs text-gray-400">{new Date(p.paid_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-400">{formatDate(p.paid_at, org.timezone)}</div>
                     {postedPaymentIds.has(p.id) ? (
                       <span className="text-xs text-emerald-600">Posted</span>
                     ) : (

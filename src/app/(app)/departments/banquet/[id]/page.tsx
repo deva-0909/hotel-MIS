@@ -3,15 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { addEventMenuItem } from "@/app/actions/banquet";
 import { formatMoney } from "@/lib/format-money";
+import { formatDateTime } from "@/lib/format-datetime";
 import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Select, Input, Label } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { EVENT_STATUS_COLOR } from "@/lib/status-colors";
 import { EventStatusControl } from "../banquet-actions";
 import { RemoveMenuItemButton, PrintBeoButton } from "./beo-actions";
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString([], { weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-}
 
 export default async function BanquetEventOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -74,11 +71,15 @@ export default async function BanquetEventOrderPage({ params }: { params: Promis
           </div>
           <div>
             <div className="text-xs uppercase text-gray-400">Starts</div>
-            <div className="mt-0.5 text-gray-900">{formatDateTime(event.start_at)}</div>
+            <div className="mt-0.5 text-gray-900">
+              {formatDateTime(event.start_at, org.timezone, { weekday: "short", year: undefined })}
+            </div>
           </div>
           <div>
             <div className="text-xs uppercase text-gray-400">Ends</div>
-            <div className="mt-0.5 text-gray-900">{formatDateTime(event.end_at)}</div>
+            <div className="mt-0.5 text-gray-900">
+              {formatDateTime(event.end_at, org.timezone, { weekday: "short", year: undefined })}
+            </div>
           </div>
           <div>
             <div className="text-xs uppercase text-gray-400">Setup/teardown buffer</div>

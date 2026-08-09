@@ -3,21 +3,21 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Breadcrumb, StatTile, EmptyState, Input, Label, Select } from "@/components/ui";
 import { formatMoney } from "@/lib/format-money";
+import { formatDate, formatTime } from "@/lib/format-datetime";
 import { SubmitButton } from "@/components/submit-button";
 import { createVenue, createMenuPackage } from "@/app/actions/banquet";
 import { adoptBanquetPackageTemplate } from "@/app/actions/templates";
 import { EventStatusControl, NewEventForm } from "./banquet-actions";
 
-function formatRange(startAt: string, endAt: string) {
-  const start = new Date(startAt);
-  const end = new Date(endAt);
-  const sameDay = start.toDateString() === end.toDateString();
-  const dateFmt: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short" };
-  const timeFmt: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
-  if (sameDay) {
-    return `${start.toLocaleDateString([], dateFmt)}, ${start.toLocaleTimeString([], timeFmt)} – ${end.toLocaleTimeString([], timeFmt)}`;
+function formatRange(startAt: string, endAt: string, timezone: string) {
+  const startDate = formatDate(startAt, timezone, { year: undefined });
+  const endDate = formatDate(endAt, timezone, { year: undefined });
+  const startTime = formatTime(startAt, timezone);
+  const endTime = formatTime(endAt, timezone);
+  if (startDate === endDate) {
+    return `${startDate}, ${startTime} – ${endTime}`;
   }
-  return `${start.toLocaleDateString([], dateFmt)} ${start.toLocaleTimeString([], timeFmt)} – ${end.toLocaleDateString([], dateFmt)} ${end.toLocaleTimeString([], timeFmt)}`;
+  return `${startDate} ${startTime} – ${endDate} ${endTime}`;
 }
 
 export default async function BanquetDepartmentPage() {
@@ -92,7 +92,7 @@ export default async function BanquetDepartmentPage() {
                     <td className="px-5 py-2.5 text-gray-600">{e.client_name}</td>
                     <td className="px-5 py-2.5 text-gray-600">{e.banquet_venues?.name ?? "—"}</td>
                     <td className="px-5 py-2.5 text-gray-600">{e.covers}</td>
-                    <td className="px-5 py-2.5 whitespace-nowrap text-gray-600">{formatRange(e.start_at, e.end_at)}</td>
+                    <td className="px-5 py-2.5 whitespace-nowrap text-gray-600">{formatRange(e.start_at, e.end_at, org.timezone)}</td>
                     <td className="px-5 py-2.5">
                       <EventStatusControl eventId={e.id} status={e.status} />
                     </td>

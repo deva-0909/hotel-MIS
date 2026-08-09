@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
+import { getPropertyToday } from "@/lib/format-datetime";
 import { Card, CardHeader, StatTile, Badge, Breadcrumb, EmptyState } from "@/components/ui";
 
 const DEPARTMENTS = [
@@ -22,7 +23,7 @@ const DEPARTMENTS = [
 export default async function DashboardPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getPropertyToday(org.timezone);
 
   const [
     { data: rooms },

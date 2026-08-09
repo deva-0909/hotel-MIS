@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, Select, StatTile } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
-import { createBuilding, createFloor, createRestaurant, updatePropertyCurrency } from "@/app/actions/property";
+import { createBuilding, createFloor, createRestaurant, updatePropertySettings } from "@/app/actions/property";
 import { CURRENCIES } from "@/lib/currencies";
+import { TIMEZONES } from "@/lib/timezones";
 import { RestaurantActiveToggle, PropertyActiveToggle } from "./property-actions";
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +15,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
   const { data: property } = await supabase
     .from("properties")
-    .select("id, name, code, city, address, gstin, currency, is_active")
+    .select("id, name, code, city, address, gstin, currency, timezone, is_active")
     .eq("id", id)
     .maybeSingle();
 
@@ -123,13 +124,23 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
         <Card>
           <CardHeader title="Property settings" />
-          <form action={updatePropertyCurrency.bind(null, property.id)} className="flex items-end gap-2 px-5 py-4">
-            <div className="flex-1">
+          <form action={updatePropertySettings.bind(null, property.id)} className="space-y-2 px-5 py-4">
+            <div>
               <Label>Currency</Label>
               <Select name="currency" defaultValue={property.currency}>
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>Timezone</Label>
+              <Select name="timezone" defaultValue={property.timezone}>
+                {TIMEZONES.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
                   </option>
                 ))}
               </Select>

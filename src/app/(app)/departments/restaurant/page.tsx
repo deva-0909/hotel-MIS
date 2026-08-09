@@ -2,11 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Badge, Breadcrumb, StatTile, EmptyState, Button } from "@/components/ui";
+import { getPropertyDayBounds } from "@/lib/format-datetime";
 
 export default async function RestaurantDepartmentPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
-  const todayStart = new Date().toISOString().slice(0, 10) + "T00:00:00Z";
+  const { start: todayStart } = getPropertyDayBounds(org.timezone);
 
   const { data: restaurants } = await supabase.from("restaurants").select("id").eq("property_id", org.propertyId);
   const restaurantIds = (restaurants ?? []).map((r) => r.id);

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { getPropertyToday } from "@/lib/format-datetime";
 import { Card, Breadcrumb, EmptyState } from "@/components/ui";
 
 const DAYS = 14;
@@ -48,11 +49,13 @@ export default async function RoomCalendarPage({ searchParams }: { searchParams:
   const activeFloor = floor && floors.includes(floor) ? floor : floors[0];
   const floorRooms = rooms?.filter((r) => r.floors?.name === activeFloor) ?? [];
 
+  // Anchored on the property's own "today" (not the server's UTC today) so
+  // the calendar window doesn't drift a day off around midnight UTC.
   const dates: string[] = [];
-  const today = new Date();
+  const anchor = new Date(`${getPropertyToday(org.timezone)}T00:00:00Z`);
   for (let i = 0; i < DAYS; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() + i);
+    const d = new Date(anchor);
+    d.setUTCDate(d.getUTCDate() + i);
     dates.push(d.toISOString().slice(0, 10));
   }
 

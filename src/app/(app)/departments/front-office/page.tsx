@@ -2,12 +2,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
+import { getPropertyToday } from "@/lib/format-datetime";
 import { Card, CardHeader, Badge, Breadcrumb, StatTile, EmptyState, Button } from "@/components/ui";
 
 export default async function FrontOfficeDepartmentPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getPropertyToday(org.timezone);
 
   const [{ data: rooms }, { data: arrivals }, { data: departures }, { data: inHouse }] = await Promise.all([
     supabase.from("rooms").select("status").eq("property_id", org.propertyId),

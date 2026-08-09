@@ -12,6 +12,7 @@ import {
 } from "@/app/actions/property-wizard";
 import { updateOwnProperty } from "@/app/actions/staff";
 import { CURRENCIES } from "@/lib/currencies";
+import { TIMEZONES } from "@/lib/timezones";
 import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Input, Label, Select, Button, EmptyState } from "@/components/ui";
 
@@ -183,6 +184,16 @@ export function PropertyWizard() {
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>Timezone</Label>
+              <Select name="timezone" defaultValue="Asia/Kolkata">
+                {TIMEZONES.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
                   </option>
                 ))}
               </Select>

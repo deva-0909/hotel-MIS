@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
+import { formatTime, getPropertyToday } from "@/lib/format-datetime";
 import { Card, CardHeader, Breadcrumb, StatTile, EmptyState, Input, Select, Label } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createSpaBooking, createLaundryBatch } from "@/app/actions/spa-laundry";
@@ -9,7 +10,7 @@ import { SpaStatusControl, LaundryStatusControl } from "./spa-actions";
 export default async function SpaLaundryDepartmentPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getPropertyToday(org.timezone);
 
   const [{ data: bookings }, { data: services }, { data: laundry }, { data: guests }, { data: rooms }] = await Promise.all([
     supabase
@@ -66,7 +67,7 @@ export default async function SpaLaundryDepartmentPage() {
                   {bookings.map((b) => (
                     <tr key={b.id} className="border-b border-gray-50 last:border-0">
                       <td className="px-5 py-2.5 text-gray-600">
-                        {new Date(b.scheduled_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {formatTime(b.scheduled_at, org.timezone)}
                       </td>
                       <td className="px-5 py-2.5 text-gray-800">{b.guests?.full_name ?? b.walk_in_name ?? "Walk-in"}</td>
                       <td className="px-5 py-2.5 text-gray-600">{b.spa_services?.name}</td>

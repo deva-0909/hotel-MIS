@@ -4,11 +4,12 @@ import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Badge, Breadcrumb, StatTile, EmptyState, Input, Select, Label, Button } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createEmployee } from "@/app/actions/hr";
+import { getPropertyToday } from "@/lib/format-datetime";
 
 export default async function HrDepartmentPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getPropertyToday(org.timezone);
 
   const [{ data: employees }, { data: leaves }, { data: todayAttendance }] = await Promise.all([
     supabase.from("hr_employees").select("id, full_name, department, role_title, status").order("full_name"),

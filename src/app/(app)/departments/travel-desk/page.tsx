@@ -4,11 +4,12 @@ import { Card, CardHeader, Breadcrumb, StatTile, EmptyState, Input, Select, Labe
 import { SubmitButton } from "@/components/submit-button";
 import { createTravelBooking } from "@/app/actions/travel-desk";
 import { TravelStatusControl } from "./travel-actions";
+import { getPropertyDayBounds } from "@/lib/format-datetime";
 
 export default async function TravelDeskDepartmentPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
-  const today = new Date().toISOString().slice(0, 10);
+  const { start: todayStart, end: todayEnd } = getPropertyDayBounds(org.timezone);
 
   const [{ data: bookings }, { data: vehicles }, { data: guests }, { data: todayBookings }] = await Promise.all([
     supabase
@@ -23,8 +24,8 @@ export default async function TravelDeskDepartmentPage() {
       .from("travel_bookings")
       .select("id")
       .eq("property_id", org.propertyId)
-      .gte("scheduled_at", `${today}T00:00:00Z`)
-      .lte("scheduled_at", `${today}T23:59:59Z`),
+      .gte("scheduled_at", todayStart)
+      .lte("scheduled_at", todayEnd),
   ]);
 
   const available = vehicles?.filter((v) => v.status === "available").length ?? 0;

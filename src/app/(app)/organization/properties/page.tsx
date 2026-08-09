@@ -5,6 +5,7 @@ import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, Select, 
 import { SubmitButton } from "@/components/submit-button";
 import { createProperty } from "@/app/actions/property";
 import { CURRENCIES } from "@/lib/currencies";
+import { TIMEZONES } from "@/lib/timezones";
 
 export default async function PropertiesPage() {
   const supabase = await createClient();
@@ -99,6 +100,16 @@ export default async function PropertiesPage() {
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>Timezone</Label>
+              <Select name="timezone" defaultValue="Asia/Kolkata">
+                {TIMEZONES.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
                   </option>
                 ))}
               </Select>

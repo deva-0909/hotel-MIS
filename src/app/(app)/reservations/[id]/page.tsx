@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
+import { formatDateTime } from "@/lib/format-datetime";
 import { addMiscCharge } from "@/app/actions/hotel";
 import { Card, CardHeader, Badge, Input, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
@@ -95,8 +96,8 @@ export default async function ReservationDetailPage({ params }: { params: Promis
               <div>
                 <div className="text-xs text-gray-400">Actual check-in / out</div>
                 <div className="text-gray-800">
-                  {reservation.actual_check_in_at ? new Date(reservation.actual_check_in_at).toLocaleString() : "—"} /{" "}
-                  {reservation.actual_check_out_at ? new Date(reservation.actual_check_out_at).toLocaleString() : "—"}
+                  {reservation.actual_check_in_at ? formatDateTime(reservation.actual_check_in_at, org.timezone) : "—"} /{" "}
+                  {reservation.actual_check_out_at ? formatDateTime(reservation.actual_check_out_at, org.timezone) : "—"}
                 </div>
               </div>
               {reservation.notes && (

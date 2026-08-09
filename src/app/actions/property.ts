@@ -24,6 +24,7 @@ export async function createProperty(formData: FormData) {
       address: (formData.get("address") as string) || null,
       gstin: (formData.get("gstin") as string) || null,
       currency: (formData.get("currency") as string) || "INR",
+      timezone: (formData.get("timezone") as string) || "Asia/Kolkata",
     })
     .select("id")
     .single();
@@ -43,11 +44,14 @@ export async function togglePropertyActive(propertyId: string, isActive: boolean
   revalidatePath("/organization/properties");
 }
 
-export async function updatePropertyCurrency(propertyId: string, formData: FormData) {
+export async function updatePropertySettings(propertyId: string, formData: FormData) {
   const { supabase } = await requireUser();
   const { error } = await supabase
     .from("properties")
-    .update({ currency: String(formData.get("currency")) })
+    .update({
+      currency: String(formData.get("currency")),
+      timezone: String(formData.get("timezone")),
+    })
     .eq("id", propertyId);
   if (error) throw new Error(error.message);
   revalidatePath(`/organization/properties/${propertyId}`);

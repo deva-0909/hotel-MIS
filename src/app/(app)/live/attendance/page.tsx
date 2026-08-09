@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
+import { getPropertyToday } from "@/lib/format-datetime";
 import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Select, Label } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createLeaveRequest } from "@/app/actions/hr";
@@ -11,11 +12,13 @@ export default async function AttendanceCalendarPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
 
+  // Anchored on the property's own "today" (not the server's UTC today) so
+  // the 7-day window doesn't drift a day off around midnight UTC.
   const dates: string[] = [];
-  const today = new Date();
+  const anchor = new Date(`${getPropertyToday(org.timezone)}T00:00:00Z`);
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
+    const d = new Date(anchor);
+    d.setUTCDate(d.getUTCDate() - i);
     dates.push(d.toISOString().slice(0, 10));
   }
 

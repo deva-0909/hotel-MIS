@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/require-user";
+import { formatDateTime } from "@/lib/format-datetime";
 
-function formatRange(startAt: string, endAt: string) {
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+function formatRange(startAt: string, endAt: string, timezone: string) {
+  const fmt = (iso: string) => formatDateTime(iso, timezone, { weekday: undefined, year: undefined });
   return `${fmt(startAt)} – ${fmt(endAt)}`;
 }
 
@@ -28,8 +28,9 @@ export async function createEvent(formData: FormData) {
     if (conflictError) throw new Error(conflictError.message);
     if (conflicts?.length) {
       const c = conflicts[0];
+      const { data: property } = await supabase.from("properties").select("timezone").eq("id", propertyId).maybeSingle();
       throw new Error(
-        `This venue is already booked for "${c.event_name}" (${formatRange(c.start_at, c.end_at)}, including setup/teardown buffer). Pick a different time or venue.`,
+        `This venue is already booked for "${c.event_name}" (${formatRange(c.start_at, c.end_at, property?.timezone ?? "Asia/Kolkata")}, including setup/teardown buffer). Pick a different time or venue.`,
       );
     }
   }

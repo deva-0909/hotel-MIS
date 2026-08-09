@@ -22,6 +22,7 @@ export async function wizardCreateProperty(formData: FormData) {
       address: (formData.get("address") as string) || null,
       gstin: (formData.get("gstin") as string) || null,
       currency: (formData.get("currency") as string) || "INR",
+      timezone: (formData.get("timezone") as string) || "Asia/Kolkata",
     })
     .select("id, name, code, currency")
     .single();
