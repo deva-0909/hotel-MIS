@@ -153,6 +153,7 @@ export type Database = {
           name: string
           price_per_cover: number
           property_id: string
+          template_id: string | null
         }
         Insert: {
           created_at?: string
@@ -161,6 +162,7 @@ export type Database = {
           name: string
           price_per_cover?: number
           property_id: string
+          template_id?: string | null
         }
         Update: {
           created_at?: string
@@ -169,6 +171,7 @@ export type Database = {
           name?: string
           price_per_cover?: number
           property_id?: string
+          template_id?: string | null
         }
         Relationships: [
           {
@@ -176,6 +179,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banquet_menu_packages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "corporate_banquet_package_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -240,6 +250,129 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      chart_of_accounts: {
+        Row: {
+          account_type: Database["public"]["Enums"]["account_type"]
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          property_id: string
+        }
+        Insert: {
+          account_type: Database["public"]["Enums"]["account_type"]
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          property_id: string
+        }
+        Update: {
+          account_type?: Database["public"]["Enums"]["account_type"]
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chart_of_accounts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corporate_banquet_package_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          price_per_cover: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          price_per_cover?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price_per_cover?: number
+        }
+        Relationships: []
+      }
+      corporate_menu_category_templates: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      corporate_room_type_templates: {
+        Row: {
+          amenities: string | null
+          base_rate: number
+          created_at: string
+          description: string | null
+          id: string
+          max_occupancy: number
+          name: string
+        }
+        Insert: {
+          amenities?: string | null
+          base_rate?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_occupancy?: number
+          name: string
+        }
+        Update: {
+          amenities?: string | null
+          base_rate?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_occupancy?: number
+          name?: string
+        }
+        Relationships: []
       }
       crm_campaigns: {
         Row: {
@@ -803,6 +936,147 @@ export type Database = {
           },
         ]
       }
+      journal_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          entry_date: string
+          entry_number: string
+          id: string
+          property_id: string
+          source_id: string | null
+          source_table: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          entry_date?: string
+          entry_number?: string
+          id?: string
+          property_id: string
+          source_id?: string | null
+          source_table?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          entry_date?: string
+          entry_number?: string
+          id?: string
+          property_id?: string
+          source_id?: string | null
+          source_table?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_id: string
+          credit: number
+          debit: number
+          id: string
+          journal_entry_id: string
+        }
+        Insert: {
+          account_id: string
+          credit?: number
+          debit?: number
+          id?: string
+          journal_entry_id: string
+        }
+        Update: {
+          account_id?: string
+          credit?: number
+          debit?: number
+          id?: string
+          journal_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kitchen_properties: {
+        Row: {
+          kitchen_id: string
+          property_id: string
+        }
+        Insert: {
+          kitchen_id: string
+          property_id: string
+        }
+        Update: {
+          kitchen_id?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_properties_kitchen_id_fkey"
+            columns: ["kitchen_id"]
+            isOneToOne: false
+            referencedRelation: "kitchens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kitchen_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kitchens: {
+        Row: {
+          created_at: string
+          id: string
+          is_central: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_central?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_central?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       laundry_batches: {
         Row: {
           created_at: string
@@ -896,28 +1170,48 @@ export type Database = {
       menu_categories: {
         Row: {
           id: string
+          kitchen_id: string | null
           name: string
           restaurant_id: string
           sort_order: number
+          template_id: string | null
         }
         Insert: {
           id?: string
+          kitchen_id?: string | null
           name: string
           restaurant_id: string
           sort_order?: number
+          template_id?: string | null
         }
         Update: {
           id?: string
+          kitchen_id?: string | null
           name?: string
           restaurant_id?: string
           sort_order?: number
+          template_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "menu_categories_kitchen_id_fkey"
+            columns: ["kitchen_id"]
+            isOneToOne: false
+            referencedRelation: "kitchens"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "menu_categories_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_categories_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "corporate_menu_category_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -1473,6 +1767,7 @@ export type Database = {
           created_at: string
           id: string
           restaurant_id: string
+          service_area_id: string | null
           status: Database["public"]["Enums"]["table_status"]
           table_number: string
           updated_at: string
@@ -1482,6 +1777,7 @@ export type Database = {
           created_at?: string
           id?: string
           restaurant_id: string
+          service_area_id?: string | null
           status?: Database["public"]["Enums"]["table_status"]
           table_number: string
           updated_at?: string
@@ -1491,6 +1787,7 @@ export type Database = {
           created_at?: string
           id?: string
           restaurant_id?: string
+          service_area_id?: string | null
           status?: Database["public"]["Enums"]["table_status"]
           table_number?: string
           updated_at?: string
@@ -1501,6 +1798,13 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_tables_service_area_id_fkey"
+            columns: ["service_area_id"]
+            isOneToOne: false
+            referencedRelation: "service_areas"
             referencedColumns: ["id"]
           },
         ]
@@ -1550,6 +1854,7 @@ export type Database = {
           max_occupancy: number
           name: string
           property_id: string
+          template_id: string | null
         }
         Insert: {
           amenities?: string | null
@@ -1560,6 +1865,7 @@ export type Database = {
           max_occupancy?: number
           name: string
           property_id: string
+          template_id?: string | null
         }
         Update: {
           amenities?: string | null
@@ -1570,6 +1876,7 @@ export type Database = {
           max_occupancy?: number
           name?: string
           property_id?: string
+          template_id?: string | null
         }
         Relationships: [
           {
@@ -1577,6 +1884,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_types_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "corporate_room_type_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -1645,6 +1959,35 @@ export type Database = {
             columns: ["room_type_id"]
             isOneToOne: false
             referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_areas: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          restaurant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          restaurant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_areas_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
@@ -1794,6 +2137,100 @@ export type Database = {
           {
             foreignKeyName: "stock_movements_property_id_fkey"
             columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfer_items: {
+        Row: {
+          id: string
+          inventory_item_id: string
+          quantity: number
+          transfer_id: string
+        }
+        Insert: {
+          id?: string
+          inventory_item_id: string
+          quantity: number
+          transfer_id: string
+        }
+        Update: {
+          id?: string
+          inventory_item_id?: string
+          quantity?: number
+          transfer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfer_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "stock_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          from_property_id: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["transfer_status"]
+          to_property_id: string
+          transfer_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          from_property_id: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["transfer_status"]
+          to_property_id: string
+          transfer_number?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          from_property_id?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["transfer_status"]
+          to_property_id?: string
+          transfer_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_from_property_id_fkey"
+            columns: ["from_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_to_property_id_fkey"
+            columns: ["to_property_id"]
             isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
@@ -1999,30 +2436,67 @@ export type Database = {
           start_at: string
         }[]
       }
+      create_journal_entry: {
+        Args: {
+          p_description: string
+          p_entry_date: string
+          p_lines: Json
+          p_property_id: string
+          p_source_id?: string
+          p_source_table?: string
+          p_staff_id: string
+        }
+        Returns: string
+      }
       generate_invoice_from_reservation: {
         Args: { p_reservation_id: string; p_staff_id: string }
         Returns: string
       }
       is_admin_staff: { Args: never; Returns: boolean }
+      is_kitchen_network_staff: {
+        Args: { p_property_id: string }
+        Returns: boolean
+      }
       is_staff: { Args: never; Returns: boolean }
       is_staff_for_property: {
         Args: { p_property_id: string }
+        Returns: boolean
+      }
+      is_staff_for_transfer: {
+        Args: { p_from: string; p_to: string }
         Returns: boolean
       }
       next_doc_number: {
         Args: { prefix: string; seq_name: string }
         Returns: string
       }
+      post_invoice_to_ledger: {
+        Args: { p_invoice_id: string; p_staff_id: string }
+        Returns: string
+      }
+      post_payment_to_ledger: {
+        Args: { p_payment_id: string; p_staff_id: string }
+        Returns: string
+      }
       receive_po_item: {
         Args: { p_po_item_id: string; p_quantity: number; p_staff_id: string }
+        Returns: undefined
+      }
+      receive_stock_transfer: {
+        Args: { p_staff_id: string; p_transfer_id: string }
         Returns: undefined
       }
       recompute_invoice_totals: {
         Args: { p_invoice_id: string }
         Returns: undefined
       }
+      seed_default_chart_of_accounts: {
+        Args: { p_property_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
+      account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
       invoice_status:
         | "draft"
         | "issued"
@@ -2087,7 +2561,10 @@ export type Database = {
         | "consumption"
         | "adjustment"
         | "wastage"
+        | "transfer_out"
+        | "transfer_in"
       table_status: "available" | "occupied" | "reserved" | "cleaning"
+      transfer_status: "requested" | "in_transit" | "received" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2215,6 +2692,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["asset", "liability", "equity", "revenue", "expense"],
       invoice_status: [
         "draft",
         "issued",
@@ -2286,8 +2764,11 @@ export const Constants = {
         "consumption",
         "adjustment",
         "wastage",
+        "transfer_out",
+        "transfer_in",
       ],
       table_status: ["available", "occupied", "reserved", "cleaning"],
+      transfer_status: ["requested", "in_transit", "received", "cancelled"],
     },
   },
 } as const
