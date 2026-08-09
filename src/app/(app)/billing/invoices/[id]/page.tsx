@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { addInvoiceLineItem, recordPayment, updateInvoiceAdjustments } from "@/app/actions/billing";
@@ -124,7 +125,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 <span>₹{invoice.subtotal}</span>
               </div>
               <div className="flex justify-between text-gray-600">
-                <span>Tax</span>
+                <span>
+                  Tax{" "}
+                  <Link href="/accounts/tax-rates" className="text-xs text-accent hover:underline">
+                    (auto, manage rates)
+                  </Link>
+                </span>
                 <span>₹{invoice.tax_amount}</span>
               </div>
               <div className="flex justify-between text-gray-600">
@@ -150,10 +156,6 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 action={updateInvoiceAdjustments.bind(null, invoice.id)}
                 className="flex items-end gap-2 border-t border-gray-100 px-5 py-4"
               >
-                <div className="w-32">
-                  <Label>Tax amount</Label>
-                  <Input name="tax_amount" type="number" min={0} step="0.01" defaultValue={invoice.tax_amount} />
-                </div>
                 <div className="w-32">
                   <Label>Discount amount</Label>
                   <Input name="discount_amount" type="number" min={0} step="0.01" defaultValue={invoice.discount_amount} />

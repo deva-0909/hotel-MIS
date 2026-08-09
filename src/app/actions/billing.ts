@@ -43,14 +43,15 @@ export async function addInvoiceLineItem(invoiceId: string, formData: FormData) 
   revalidatePath(`/billing/invoices/${invoiceId}`);
 }
 
+// tax_amount is no longer set here — recompute_invoice_totals derives it
+// from the invoice's line items against configured tax_rates (see
+// 0021_tax_rates.sql) and would just overwrite a manually-typed value on
+// the next line-item change anyway.
 export async function updateInvoiceAdjustments(invoiceId: string, formData: FormData) {
   const { supabase } = await requireUser();
   const { error } = await supabase
     .from("invoices")
-    .update({
-      tax_amount: Number(formData.get("tax_amount") ?? 0),
-      discount_amount: Number(formData.get("discount_amount") ?? 0),
-    })
+    .update({ discount_amount: Number(formData.get("discount_amount") ?? 0) })
     .eq("id", invoiceId);
   if (error) throw new Error(error.message);
 

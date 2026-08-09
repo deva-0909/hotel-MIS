@@ -2267,6 +2267,44 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_rates: {
+        Row: {
+          applies_to: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          property_id: string
+          rate_percent: number
+        }
+        Insert: {
+          applies_to: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          property_id: string
+          rate_percent: number
+        }
+        Update: {
+          applies_to?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          property_id?: string
+          rate_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_rates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       travel_bookings: {
         Row: {
           created_at: string

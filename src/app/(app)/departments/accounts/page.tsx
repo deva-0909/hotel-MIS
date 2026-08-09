@@ -94,6 +94,7 @@ export default async function AccountsDepartmentPage() {
             <Link href="/billing/invoices/new"><Button variant="secondary" className="w-full">Generate Invoice</Button></Link>
             <Link href="/billing/invoices"><Button variant="secondary" className="w-full">All Invoices</Button></Link>
             <Link href="/live/gst-invoice"><Button variant="secondary" className="w-full">GST Invoice View</Button></Link>
+            <Link href="/accounts/tax-rates"><Button variant="secondary" className="w-full">Tax Rates</Button></Link>
             <Link href="/accounts/chart-of-accounts"><Button variant="secondary" className="w-full">Chart of Accounts</Button></Link>
             <Link href="/accounts/journal-entries"><Button variant="secondary" className="w-full">Journal Entries</Button></Link>
             <Link href="/accounts/trial-balance"><Button variant="secondary" className="w-full">Trial Balance</Button></Link>
