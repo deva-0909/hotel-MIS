@@ -24,7 +24,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, order_number, order_type, status, bill_to_room, notes, restaurant_tables(table_number), guests(full_name), reservations(reservation_number, rooms(room_number))",
+      "id, order_number, order_type, status, bill_to_room, notes, restaurant_tables(table_number), guests(full_name), reservations(reservation_number, property_id, properties(name), guests(full_name), rooms(room_number))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -61,8 +61,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
           <p className="mt-1 text-sm text-gray-500">
             {order.order_type.replace(/_/g, " ")} ·{" "}
-            {order.restaurant_tables?.table_number ?? order.reservations?.rooms?.room_number ?? order.guests?.full_name ?? "—"}
+            {order.restaurant_tables?.table_number ??
+              (order.reservations
+                ? `${order.reservations.rooms?.room_number ?? "—"} · ${order.reservations.guests?.full_name ?? "—"}`
+                : order.guests?.full_name ?? "—")}
             {order.bill_to_room && " · billed to room"}
+            {order.reservations && order.reservations.property_id !== org.propertyId && (
+              <span className="text-accent"> · visiting from {order.reservations.properties?.name}</span>
+            )}
           </p>
         </div>
         <OrderLifecycleActions orderId={order.id} status={order.status} />

@@ -18,7 +18,9 @@ export default async function OrdersPage() {
   const org = await getOrgContext();
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, order_number, order_type, status, bill_to_room, created_at, restaurant_tables(table_number), guests(full_name)")
+    .select(
+      "id, order_number, order_type, status, bill_to_room, created_at, restaurant_tables(table_number), guests(full_name), reservations(property_id, properties(name), guests(full_name), rooms(room_number))",
+    )
     .eq("property_id", org.propertyId)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -55,8 +57,14 @@ export default async function OrdersPage() {
                   </td>
                   <td className="px-5 py-2.5 capitalize text-gray-600">{o.order_type.replace(/_/g, " ")}</td>
                   <td className="px-5 py-2.5 text-gray-600">
-                    {o.restaurant_tables?.table_number ?? o.guests?.full_name ?? "—"}
+                    {o.restaurant_tables?.table_number ??
+                      (o.reservations
+                        ? `${o.reservations.rooms?.room_number ?? "—"} · ${o.reservations.guests?.full_name ?? "—"}`
+                        : o.guests?.full_name ?? "—")}
                     {o.bill_to_room && <span className="ml-1 text-xs text-purple-600">(bill to room)</span>}
+                    {o.reservations && o.reservations.property_id !== org.propertyId && (
+                      <span className="ml-1 text-xs text-accent">— visiting from {o.reservations.properties?.name}</span>
+                    )}
                   </td>
                   <td className="px-5 py-2.5">
                     <Badge color={STATUS_COLOR[o.status]}>{o.status.replace(/_/g, " ")}</Badge>

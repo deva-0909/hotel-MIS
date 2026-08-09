@@ -13,10 +13,13 @@ export default async function NewOrderPage() {
     restaurantIds.length
       ? supabase.from("restaurant_tables").select("id, table_number").in("restaurant_id", restaurantIds).order("table_number")
       : Promise.resolve({ data: [] }),
+    // Not property-scoped: a guest visiting from a sister property can still
+    // be billed here (see 0020_cross_property_dining) — the form groups
+    // these by property so staff can tell home-property guests apart from
+    // visitors.
     supabase
       .from("reservations")
-      .select("id, reservation_number, guests(full_name), rooms(room_number)")
-      .eq("property_id", org.propertyId)
+      .select("id, reservation_number, property_id, properties(name), guests(full_name), rooms(room_number)")
       .eq("status", "checked_in")
       .order("check_in_date"),
   ]);
@@ -24,7 +27,7 @@ export default async function NewOrderPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-gray-900">New order</h1>
-      <OrderForm tables={tables ?? []} reservations={reservations ?? []} />
+      <OrderForm tables={tables ?? []} reservations={reservations ?? []} homePropertyId={org.propertyId} />
     </div>
   );
 }
