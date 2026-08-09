@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
 import { Card, Badge, Button, EmptyState } from "@/components/ui";
 
 const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> = {
@@ -12,9 +13,11 @@ const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> 
 
 export default async function InvoicesPage() {
   const supabase = await createClient();
+  const org = await getOrgContext();
   const { data: invoices } = await supabase
     .from("invoices")
     .select("id, invoice_number, status, total_amount, amount_paid, created_at, guests(full_name)")
+    .eq("property_id", org.propertyId)
     .order("created_at", { ascending: false })
     .limit(200);
 

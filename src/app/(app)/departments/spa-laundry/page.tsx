@@ -14,13 +14,19 @@ export default async function SpaLaundryDepartmentPage() {
     supabase
       .from("spa_bookings")
       .select("id, therapist, scheduled_at, status, walk_in_name, guests(full_name), spa_services(name)")
+      .eq("property_id", org.propertyId)
       .gte("scheduled_at", `${today}T00:00:00Z`)
       .lte("scheduled_at", `${today}T23:59:59Z`)
       .order("scheduled_at"),
-    supabase.from("spa_services").select("id, name, price"),
-    supabase.from("laundry_batches").select("id, item_count, status, rooms(room_number)").order("created_at", { ascending: false }).limit(10),
+    supabase.from("spa_services").select("id, name, price").eq("property_id", org.propertyId),
+    supabase
+      .from("laundry_batches")
+      .select("id, item_count, status, rooms(room_number)")
+      .eq("property_id", org.propertyId)
+      .order("created_at", { ascending: false })
+      .limit(10),
     supabase.from("guests").select("id, full_name").order("full_name").limit(200),
-    supabase.from("rooms").select("id, room_number").order("room_number"),
+    supabase.from("rooms").select("id, room_number").eq("property_id", org.propertyId).order("room_number"),
   ]);
 
   return (

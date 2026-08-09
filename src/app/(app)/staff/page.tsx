@@ -1,10 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, EmptyState } from "@/components/ui";
-import { ActiveToggle, RoleSelect } from "@/components/staff-controls";
+import { ActiveToggle, RoleSelect, PropertySelect } from "@/components/staff-controls";
 
 export default async function StaffPage() {
   const supabase = await createClient();
-  const { data: staff } = await supabase.from("profiles").select("id, full_name, role, phone, active").order("full_name");
+  const [{ data: staff }, { data: properties }] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, role, phone, active, property_id").order("full_name"),
+    supabase.from("properties").select("id, name").order("name"),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -21,6 +24,7 @@ export default async function StaffPage() {
                 <th className="px-5 py-2 font-medium">Name</th>
                 <th className="px-5 py-2 font-medium">Phone</th>
                 <th className="px-5 py-2 font-medium">Role</th>
+                <th className="px-5 py-2 font-medium">Property</th>
                 <th className="px-5 py-2 font-medium">Status</th>
               </tr>
             </thead>
@@ -31,6 +35,9 @@ export default async function StaffPage() {
                   <td className="px-5 py-2.5 text-gray-600">{s.phone ?? "—"}</td>
                   <td className="px-5 py-2.5">
                     <RoleSelect staffId={s.id} role={s.role} />
+                  </td>
+                  <td className="px-5 py-2.5">
+                    <PropertySelect staffId={s.id} propertyId={s.property_id} properties={properties ?? []} />
                   </td>
                   <td className="px-5 py-2.5">
                     <ActiveToggle staffId={s.id} active={s.active} />

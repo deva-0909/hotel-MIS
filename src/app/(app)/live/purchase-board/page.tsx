@@ -20,6 +20,7 @@ export default async function PurchaseBoardPage() {
   const { data: pos } = await supabase
     .from("purchase_orders")
     .select("id, po_number, status, suppliers(name)")
+    .eq("property_id", org.propertyId)
     .order("created_at", { ascending: false });
 
   const byStatus = new Map<string, typeof pos>();

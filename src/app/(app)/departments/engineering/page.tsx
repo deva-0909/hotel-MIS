@@ -15,9 +15,10 @@ export default async function EngineeringDepartmentPage() {
     supabase
       .from("work_orders")
       .select("id, wo_number, location, issue, priority, status, assigned_to")
+      .eq("property_id", org.propertyId)
       .order("created_at", { ascending: false })
       .limit(15),
-    supabase.from("engineering_assets").select("id, name, status"),
+    supabase.from("engineering_assets").select("id, name, status").eq("property_id", org.propertyId),
   ]);
 
   const openCount = workOrders?.filter((w) => w.status !== "resolved").length ?? 0;

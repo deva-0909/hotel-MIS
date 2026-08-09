@@ -6,13 +6,19 @@ export default async function KitchenDepartmentPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const { data: tickets } = await supabase
-    .from("order_items")
-    .select(
-      "id, quantity, status, kot_sent_at, menu_items(name), orders(order_number, restaurant_tables(table_number))",
-    )
-    .in("status", ["pending", "preparing"])
-    .order("kot_sent_at", { ascending: true, nullsFirst: true });
+  const { data: propertyOrders } = await supabase.from("orders").select("id").eq("property_id", org.propertyId);
+  const orderIds = (propertyOrders ?? []).map((o) => o.id);
+
+  const { data: tickets } = orderIds.length
+    ? await supabase
+        .from("order_items")
+        .select(
+          "id, quantity, status, kot_sent_at, menu_items(name), orders(order_number, restaurant_tables(table_number))",
+        )
+        .in("order_id", orderIds)
+        .in("status", ["pending", "preparing"])
+        .order("kot_sent_at", { ascending: true, nullsFirst: true })
+    : { data: [] };
 
   const preparing = tickets?.filter((t) => t.status === "preparing").length ?? 0;
 

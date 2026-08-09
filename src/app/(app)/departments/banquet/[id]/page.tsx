@@ -32,7 +32,7 @@ export default async function BanquetEventOrderPage({ params }: { params: Promis
       .from("banquet_event_items")
       .select("id, covers, notes, banquet_menu_packages(id, name, price_per_cover)")
       .eq("event_id", id),
-    supabase.from("banquet_menu_packages").select("id, name, price_per_cover").order("name"),
+    supabase.from("banquet_menu_packages").select("id, name, price_per_cover").eq("property_id", org.propertyId).order("name"),
   ]);
 
   const foodCost = items?.reduce((sum, i) => sum + i.covers * (i.banquet_menu_packages?.price_per_cover ?? 0), 0) ?? 0;

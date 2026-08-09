@@ -8,15 +8,21 @@ export default async function RestaurantDepartmentPage() {
   const org = await getOrgContext();
   const todayStart = new Date().toISOString().slice(0, 10) + "T00:00:00Z";
 
+  const { data: restaurants } = await supabase.from("restaurants").select("id").eq("property_id", org.propertyId);
+  const restaurantIds = (restaurants ?? []).map((r) => r.id);
+
   const [{ data: tables }, { data: openOrders }, { data: todayOrders }] = await Promise.all([
-    supabase.from("restaurant_tables").select("id, status"),
+    restaurantIds.length
+      ? supabase.from("restaurant_tables").select("id, status").in("restaurant_id", restaurantIds)
+      : Promise.resolve({ data: [] }),
     supabase
       .from("orders")
       .select("id, order_number, order_type, status, restaurant_tables(table_number)")
+      .eq("property_id", org.propertyId)
       .in("status", ["open", "sent_to_kitchen", "preparing", "ready", "served"])
       .order("created_at", { ascending: false })
       .limit(10),
-    supabase.from("orders").select("id, order_type").gte("created_at", todayStart),
+    supabase.from("orders").select("id, order_type").eq("property_id", org.propertyId).gte("created_at", todayStart),
   ]);
 
   const occupiedTables = tables?.filter((t) => t.status === "occupied").length ?? 0;

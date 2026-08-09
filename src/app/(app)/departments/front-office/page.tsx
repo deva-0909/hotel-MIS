@@ -9,12 +9,13 @@ export default async function FrontOfficeDepartmentPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   const [{ data: rooms }, { data: arrivals }, { data: departures }, { data: inHouse }] = await Promise.all([
-    supabase.from("rooms").select("status"),
-    supabase.from("reservations").select("id").eq("check_in_date", today).eq("status", "confirmed"),
-    supabase.from("reservations").select("id").eq("check_out_date", today).eq("status", "checked_in"),
+    supabase.from("rooms").select("status").eq("property_id", org.propertyId),
+    supabase.from("reservations").select("id").eq("property_id", org.propertyId).eq("check_in_date", today).eq("status", "confirmed"),
+    supabase.from("reservations").select("id").eq("property_id", org.propertyId).eq("check_out_date", today).eq("status", "checked_in"),
     supabase
       .from("reservations")
       .select("id, check_in_date, check_out_date, rate_per_night, status, guests(full_name), rooms(room_number)")
+      .eq("property_id", org.propertyId)
       .in("status", ["confirmed", "checked_in"])
       .order("check_in_date", { ascending: false })
       .limit(8),

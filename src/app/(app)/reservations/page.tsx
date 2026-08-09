@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
 import { Card, Badge, Button, EmptyState } from "@/components/ui";
 import type { Database } from "@/lib/database.types";
 
@@ -22,12 +23,14 @@ export default async function ReservationsPage({
 }) {
   const { guest, status } = await searchParams;
   const supabase = await createClient();
+  const org = await getOrgContext();
 
   let query = supabase
     .from("reservations")
     .select(
       "id, reservation_number, check_in_date, check_out_date, status, rate_per_night, guests(full_name), rooms(room_number)",
     )
+    .eq("property_id", org.propertyId)
     .order("created_at", { ascending: false })
     .limit(200);
 

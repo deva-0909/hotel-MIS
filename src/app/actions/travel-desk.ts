@@ -1,21 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
-}
+import { requireUser } from "@/lib/require-user";
 
 export async function createTravelBooking(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const guestId = formData.get("guest_id") as string | null;
   const { error } = await supabase.from("travel_bookings").insert({
+    property_id: propertyId,
     guest_id: guestId || null,
     walk_in_name: guestId ? null : (formData.get("walk_in_name") as string) || null,
     service_type: String(formData.get("service_type")),

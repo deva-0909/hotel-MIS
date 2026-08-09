@@ -1,16 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
-}
+import { requireUser } from "@/lib/require-user";
 
 function formatRange(startAt: string, endAt: string) {
   const fmt = (iso: string) =>
@@ -19,7 +10,7 @@ function formatRange(startAt: string, endAt: string) {
 }
 
 export async function createEvent(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const venueId = (formData.get("venue_id") as string) || null;
   const startAt = String(formData.get("start_at"));
   const endAt = String(formData.get("end_at"));
@@ -44,6 +35,7 @@ export async function createEvent(formData: FormData) {
   }
 
   const { error } = await supabase.from("banquet_events").insert({
+    property_id: propertyId,
     event_name: String(formData.get("event_name")),
     client_name: String(formData.get("client_name")),
     venue_id: venueId,
@@ -65,8 +57,9 @@ export async function updateEventStatus(eventId: string, status: "tentative" | "
 }
 
 export async function createVenue(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const { error } = await supabase.from("banquet_venues").insert({
+    property_id: propertyId,
     name: String(formData.get("name")),
     capacity: Number(formData.get("capacity") ?? 0),
     buffer_minutes: Number(formData.get("buffer_minutes") ?? 60),
@@ -76,8 +69,9 @@ export async function createVenue(formData: FormData) {
 }
 
 export async function createMenuPackage(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const { error } = await supabase.from("banquet_menu_packages").insert({
+    property_id: propertyId,
     name: String(formData.get("name")),
     description: (formData.get("description") as string) || null,
     price_per_cover: Number(formData.get("price_per_cover") ?? 0),

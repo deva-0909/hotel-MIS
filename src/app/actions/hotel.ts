@@ -2,23 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/require-user";
 import type { Database } from "@/lib/database.types";
 
 type RoomStatus = Database["public"]["Enums"]["room_status"];
 
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
-}
-
 export async function createRoomType(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const { error } = await supabase.from("room_types").insert({
+    property_id: propertyId,
     name: String(formData.get("name")),
     base_rate: Number(formData.get("base_rate") ?? 0),
     max_occupancy: Number(formData.get("max_occupancy") ?? 2),
@@ -30,11 +22,17 @@ export async function createRoomType(formData: FormData) {
 }
 
 export async function createRoom(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
+  const floorId = String(formData.get("floor_id"));
+  const { data: floor, error: floorError } = await supabase.from("floors").select("building_id").eq("id", floorId).single();
+  if (floorError) throw new Error(floorError.message);
+
   const { error } = await supabase.from("rooms").insert({
+    property_id: propertyId,
+    building_id: floor.building_id,
+    floor_id: floorId,
     room_number: String(formData.get("room_number")),
     room_type_id: String(formData.get("room_type_id")),
-    floor: (formData.get("floor") as string) || null,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/rooms");
@@ -63,7 +61,7 @@ export async function createGuest(formData: FormData) {
 }
 
 export async function createReservation(formData: FormData) {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, propertyId } = await requireUser();
 
   let guestId = formData.get("guest_id") as string | null;
   if (!guestId) {
@@ -86,7 +84,12 @@ export async function createReservation(formData: FormData) {
   const roomId = (formData.get("room_id") as string) || null;
 
   if (roomId) {
-    const { data: room, error: roomError } = await supabase.from("rooms").select("status").eq("id", roomId).maybeSingle();
+    const { data: room, error: roomError } = await supabase
+      .from("rooms")
+      .select("status")
+      .eq("id", roomId)
+      .eq("property_id", propertyId)
+      .maybeSingle();
     if (roomError) throw new Error(roomError.message);
     if (!room || !["available", "dirty"].includes(room.status)) {
       throw new Error("This room is no longer available. Pick a different room.");
@@ -94,6 +97,7 @@ export async function createReservation(formData: FormData) {
   }
 
   const { error } = await supabase.from("reservations").insert({
+    property_id: propertyId,
     guest_id: guestId,
     room_id: roomId,
     room_type_id: String(formData.get("room_type_id")),
@@ -112,9 +116,14 @@ export async function createReservation(formData: FormData) {
 }
 
 export async function assignRoom(reservationId: string, roomId: string) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
 
-  const { data: room, error: roomError } = await supabase.from("rooms").select("status").eq("id", roomId).maybeSingle();
+  const { data: room, error: roomError } = await supabase
+    .from("rooms")
+    .select("status")
+    .eq("id", roomId)
+    .eq("property_id", propertyId)
+    .maybeSingle();
   if (roomError) throw new Error(roomError.message);
   if (!room || !["available", "dirty"].includes(room.status)) {
     throw new Error("This room is no longer available. Pick a different room.");

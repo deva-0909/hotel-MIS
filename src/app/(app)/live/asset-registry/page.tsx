@@ -12,6 +12,7 @@ export default async function AssetRegistryPage() {
   const { data: assets } = await supabase
     .from("engineering_assets")
     .select("id, asset_code, name, category, location, status, next_service_date")
+    .eq("property_id", org.propertyId)
     .order("asset_code");
 
   return (

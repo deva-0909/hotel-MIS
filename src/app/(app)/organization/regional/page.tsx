@@ -8,14 +8,23 @@ export default async function RegionalDashboardPage() {
   const monthStart = new Date();
   monthStart.setDate(1);
 
-  const [{ data: rooms }, { data: monthInvoices }] = await Promise.all([
-    supabase.from("rooms").select("status"),
-    supabase.from("invoices").select("amount_paid").gte("created_at", monthStart.toISOString()),
+  const [{ data: properties }, { data: rooms }, { data: monthInvoices }] = await Promise.all([
+    supabase.from("properties").select("id, name, city").order("name"),
+    supabase.from("rooms").select("property_id, status"),
+    supabase.from("invoices").select("property_id, amount_paid").gte("created_at", monthStart.toISOString()),
   ]);
 
   const occupied = rooms?.filter((r) => r.status === "occupied").length ?? 0;
   const occupancy = rooms?.length ? Math.round((occupied / rooms.length) * 100) : 0;
   const revenueMtd = monthInvoices?.reduce((sum, i) => sum + Number(i.amount_paid), 0) ?? 0;
+
+  const roomsByProperty = new Map<string, { total: number; occupied: number }>();
+  for (const r of rooms ?? []) {
+    const entry = roomsByProperty.get(r.property_id) ?? { total: 0, occupied: 0 };
+    entry.total += 1;
+    if (r.status === "occupied") entry.occupied += 1;
+    roomsByProperty.set(r.property_id, entry);
+  }
 
   return (
     <div className="space-y-6">
@@ -24,7 +33,7 @@ export default async function RegionalDashboardPage() {
       <h1 className="text-2xl text-gray-900">{org.regionName}</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatTile label="Properties" value={1} />
+        <StatTile label="Properties" value={properties?.length ?? 0} />
         <StatTile label="Rooms" value={rooms?.length ?? 0} />
         <StatTile label="Occupancy" value={`${occupancy}%`} />
         <StatTile label="Revenue MTD" value={`₹${revenueMtd.toFixed(0)}`} />
@@ -42,12 +51,18 @@ export default async function RegionalDashboardPage() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="px-5 py-2.5 text-gray-800">{org.hotelName}</td>
-              <td className="px-5 py-2.5 text-gray-600">{org.city ?? "—"}</td>
-              <td className="px-5 py-2.5 text-gray-600">{rooms?.length ?? 0}</td>
-              <td className="px-5 py-2.5 text-gray-600">{occupancy}%</td>
-            </tr>
+            {properties?.map((p) => {
+              const stats = roomsByProperty.get(p.id) ?? { total: 0, occupied: 0 };
+              const pct = stats.total ? Math.round((stats.occupied / stats.total) * 100) : 0;
+              return (
+                <tr key={p.id} className="border-b border-gray-50 last:border-0">
+                  <td className="px-5 py-2.5 text-gray-800">{p.name}</td>
+                  <td className="px-5 py-2.5 text-gray-600">{p.city ?? "—"}</td>
+                  <td className="px-5 py-2.5 text-gray-600">{stats.total}</td>
+                  <td className="px-5 py-2.5 text-gray-600">{pct}%</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </Card>

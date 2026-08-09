@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/app/login/actions";
-import { updateOwnRole } from "@/app/actions/staff";
+import { updateOwnRole, updateOwnProperty } from "@/app/actions/staff";
 import type { Database } from "@/lib/database.types";
 
 type StaffRole = Database["public"]["Enums"]["staff_role"];
@@ -34,6 +34,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { code: "CO", href: "/organization/corporate", label: "Corporate Dashboard", roles: ["admin"] },
       { code: "RG", href: "/organization/regional", label: "Regional Dashboard", roles: ["admin"] },
+      { code: "PP", href: "/organization/properties", label: "Properties", roles: ["admin"] },
       { code: "PR", href: "/", label: "Property Dashboard" },
       { code: "RA", href: "/roles-access", label: "Roles & Access", roles: ["admin"] },
       { code: "ST", href: "/staff", label: "Staff Accounts", roles: ["admin"] },
@@ -77,10 +78,21 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
 ];
 
-export function Sidebar({ fullName, role }: { fullName: string; role: StaffRole }) {
+export function Sidebar({
+  fullName,
+  role,
+  propertyId,
+  properties,
+}: {
+  fullName: string;
+  role: StaffRole;
+  propertyId: string | null;
+  properties: { id: string; name: string }[];
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [switching, startSwitching] = useTransition();
+  const [switchingProperty, startSwitchingProperty] = useTransition();
 
   const visibleNav = NAV.map((group) => ({
     ...group,
@@ -127,6 +139,28 @@ export function Sidebar({ fullName, role }: { fullName: string; role: StaffRole 
 
       <div className="border-t border-black/10 px-4 py-3">
         <div className="text-xs font-medium text-gray-800">{fullName}</div>
+
+        {properties.length > 0 && (
+          <select
+            value={propertyId ?? ""}
+            disabled={switchingProperty}
+            onChange={(e) => {
+              const next = e.target.value;
+              startSwitchingProperty(async () => {
+                await updateOwnProperty(next);
+                router.refresh();
+              });
+            }}
+            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1 text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          >
+            {properties.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        )}
+
         <select
           value={role}
           disabled={switching}

@@ -8,17 +8,26 @@ export default async function StoresPurchaseDepartmentPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const [{ data: items }, { data: pos }] = await Promise.all([
-    supabase.from("inventory_items").select("id, name, current_stock, reorder_level, unit_cost"),
+  const [{ data: rawItems }, { data: pos }] = await Promise.all([
+    supabase
+      .from("inventory_items")
+      .select("id, name, unit_cost, property_inventory(current_stock, reorder_level)")
+      .eq("property_inventory.property_id", org.propertyId),
     supabase
       .from("purchase_orders")
       .select("id, po_number, status, suppliers(name)")
+      .eq("property_id", org.propertyId)
       .order("created_at", { ascending: false })
       .limit(8),
   ]);
 
-  const lowStock = items?.filter((i) => Number(i.current_stock) <= Number(i.reorder_level)) ?? [];
-  const stockValue = items?.reduce((sum, i) => sum + Number(i.current_stock) * Number(i.unit_cost), 0) ?? 0;
+  const items = (rawItems ?? []).map((i) => ({
+    ...i,
+    current_stock: i.property_inventory[0]?.current_stock ?? 0,
+    reorder_level: i.property_inventory[0]?.reorder_level ?? 0,
+  }));
+  const lowStock = items.filter((i) => Number(i.current_stock) <= Number(i.reorder_level));
+  const stockValue = items.reduce((sum, i) => sum + Number(i.current_stock) * Number(i.unit_cost), 0);
   const openPOs = pos?.filter((p) => !["received", "rejected", "cancelled"].includes(p.status)).length ?? 0;
 
   return (

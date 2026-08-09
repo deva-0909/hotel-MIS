@@ -11,6 +11,7 @@ export default async function GstInvoicePage({ searchParams }: { searchParams: P
   const { data: invoices } = await supabase
     .from("invoices")
     .select("id, invoice_number, guests(full_name)")
+    .eq("property_id", org.propertyId)
     .order("created_at", { ascending: false })
     .limit(20);
 

@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
 import { Card, Badge, Button, EmptyState } from "@/components/ui";
 import { PO_STATUS_COLOR } from "@/lib/status-colors";
 
 export default async function PurchaseOrdersPage() {
   const supabase = await createClient();
+  const org = await getOrgContext();
   const { data: pos } = await supabase
     .from("purchase_orders")
     .select("id, po_number, status, order_date, expected_date, suppliers(name)")
+    .eq("property_id", org.propertyId)
     .order("created_at", { ascending: false });
 
   return (

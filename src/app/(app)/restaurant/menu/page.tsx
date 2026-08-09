@@ -8,15 +8,28 @@ import { MenuItemToggle } from "@/components/menu-item-toggle";
 export default async function MenuPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
-  const [{ data: categories }, { data: items }] = await Promise.all([
-    supabase.from("menu_categories").select("id, name, sort_order").order("sort_order"),
-    supabase
-      .from("menu_items")
-      .select(
-        "id, name, price, parcel_price, own_delivery_price, aggregator_price, is_veg, is_available, category_id, menu_categories(name)",
-      )
-      .order("name"),
-  ]);
+
+  const { data: restaurants } = await supabase
+    .from("restaurants")
+    .select("id, name")
+    .eq("property_id", org.propertyId)
+    .order("name");
+  const restaurantIds = (restaurants ?? []).map((r) => r.id);
+
+  const { data: categories } = restaurantIds.length
+    ? await supabase.from("menu_categories").select("id, name, sort_order, restaurant_id").in("restaurant_id", restaurantIds).order("sort_order")
+    : { data: [] };
+  const categoryIds = (categories ?? []).map((c) => c.id);
+
+  const { data: items } = categoryIds.length
+    ? await supabase
+        .from("menu_items")
+        .select(
+          "id, name, price, parcel_price, own_delivery_price, aggregator_price, is_veg, is_available, category_id, menu_categories(name)",
+        )
+        .in("category_id", categoryIds)
+        .order("name")
+    : { data: [] };
 
   return (
     <div className="space-y-6">
@@ -69,6 +82,17 @@ export default async function MenuPage() {
           <Card>
             <CardHeader title="Add category" />
             <form action={createMenuCategory} className="space-y-2 px-5 py-4">
+              <div>
+                <Label>Restaurant</Label>
+                <Select name="restaurant_id" required>
+                  <option value="">Select restaurant…</option>
+                  {restaurants?.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
               <div>
                 <Label>Name</Label>
                 <Input name="name" required />

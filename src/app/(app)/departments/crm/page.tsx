@@ -12,8 +12,12 @@ export default async function CrmDepartmentPage() {
   monthStart.setDate(1);
 
   const [{ data: campaigns }, { data: leads }, { data: loyaltyGuests }] = await Promise.all([
-    supabase.from("crm_campaigns").select("id, name, channel, audience, status").order("created_at", { ascending: false }),
-    supabase.from("crm_leads").select("id").gte("created_at", monthStart.toISOString()),
+    supabase
+      .from("crm_campaigns")
+      .select("id, name, channel, audience, status")
+      .eq("property_id", org.propertyId)
+      .order("created_at", { ascending: false }),
+    supabase.from("crm_leads").select("id").eq("property_id", org.propertyId).gte("created_at", monthStart.toISOString()),
     supabase.from("guests").select("id").not("loyalty_tier", "is", null),
   ]);
 

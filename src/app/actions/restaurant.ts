@@ -2,20 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
-}
+import { requireUser } from "@/lib/require-user";
 
 export async function createTable(formData: FormData) {
   const { supabase } = await requireUser();
   const { error } = await supabase.from("restaurant_tables").insert({
+    restaurant_id: String(formData.get("restaurant_id")),
     table_number: String(formData.get("table_number")),
     capacity: Number(formData.get("capacity") ?? 2),
   });
@@ -26,6 +18,7 @@ export async function createTable(formData: FormData) {
 export async function createMenuCategory(formData: FormData) {
   const { supabase } = await requireUser();
   const { error } = await supabase.from("menu_categories").insert({
+    restaurant_id: String(formData.get("restaurant_id")),
     name: String(formData.get("name")),
     sort_order: Number(formData.get("sort_order") ?? 0),
   });
@@ -60,7 +53,7 @@ export async function toggleMenuItemAvailability(itemId: string, available: bool
 }
 
 export async function createOrder(formData: FormData) {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, propertyId } = await requireUser();
   const orderType = String(formData.get("order_type"));
   const tableId = (formData.get("table_id") as string) || null;
   const reservationId = (formData.get("reservation_id") as string) || null;
@@ -69,6 +62,7 @@ export async function createOrder(formData: FormData) {
   const { data, error } = await supabase
     .from("orders")
     .insert({
+      property_id: propertyId,
       order_type: orderType as "dine_in" | "room_service" | "takeaway",
       table_id: orderType === "dine_in" ? tableId : null,
       reservation_id: reservationId,
@@ -161,7 +155,7 @@ export async function billOrder(orderId: string) {
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, bill_to_room, guest_id, order_number, reservations(guest_id)")
+    .select("id, bill_to_room, guest_id, order_number, property_id, reservations(guest_id)")
     .eq("id", orderId)
     .single();
   if (orderError) throw new Error(orderError.message);
@@ -197,7 +191,14 @@ export async function billOrder(orderId: string) {
 
   const { data: invoice, error: invoiceError } = await supabase
     .from("invoices")
-    .insert({ guest_id: guestId, order_id: orderId, status: "draft", issued_at: new Date().toISOString(), created_by: user.id })
+    .insert({
+      guest_id: guestId,
+      order_id: orderId,
+      property_id: order.property_id,
+      status: "draft",
+      issued_at: new Date().toISOString(),
+      created_by: user.id,
+    })
     .select("id")
     .single();
   if (invoiceError) throw new Error(invoiceError.message);

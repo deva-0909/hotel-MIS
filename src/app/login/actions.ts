@@ -29,10 +29,13 @@ export async function signUp(formData: FormData) {
     return { error: null, needsConfirmation: true };
   }
 
+  const { data: firstProperty } = await supabase.from("properties").select("id").order("created_at").limit(1).maybeSingle();
+
   const { error: profileError } = await supabase.from("profiles").insert({
     id: data.user.id,
     full_name: fullName,
     role,
+    property_id: firstProperty?.id ?? null,
   });
   if (profileError) return { error: profileError.message };
 

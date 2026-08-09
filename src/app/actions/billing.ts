@@ -2,19 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
-}
+import { requireUser } from "@/lib/require-user";
 
 export async function createInvoice(formData: FormData) {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, propertyId } = await requireUser();
 
   let guestId = formData.get("guest_id") as string | null;
   if (!guestId) {
@@ -27,7 +18,7 @@ export async function createInvoice(formData: FormData) {
 
   const { data: invoice, error } = await supabase
     .from("invoices")
-    .insert({ guest_id: guestId, status: "draft", issued_at: new Date().toISOString(), created_by: user.id })
+    .insert({ guest_id: guestId, property_id: propertyId, status: "draft", issued_at: new Date().toISOString(), created_by: user.id })
     .select("id")
     .single();
   if (error) throw new Error(error.message);

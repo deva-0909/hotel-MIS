@@ -1,19 +1,31 @@
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
 import { createInventoryCategory, createInventoryItem, recordStockMovement } from "@/app/actions/inventory";
 import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 
 export default async function InventoryItemsPage() {
   const supabase = await createClient();
-  const [{ data: categories }, { data: items }] = await Promise.all([
+  const org = await getOrgContext();
+
+  const [{ data: categories }, { data: rawItems }] = await Promise.all([
     supabase.from("inventory_categories").select("id, name").order("name"),
     supabase
       .from("inventory_items")
-      .select("id, name, unit, current_stock, reorder_level, unit_cost, inventory_categories(name)")
+      .select("id, name, unit, unit_cost, inventory_categories(name), property_inventory(current_stock, reorder_level)")
+      .eq("property_inventory.property_id", org.propertyId)
       .order("name"),
   ]);
 
-  const lowStock = items?.filter((i) => Number(i.current_stock) <= Number(i.reorder_level)) ?? [];
+  // Catalog is shared across properties; stock is per-property (property_inventory
+  // has at most one matching row, or none if this property has never stocked it).
+  const items = (rawItems ?? []).map((i) => ({
+    ...i,
+    current_stock: i.property_inventory[0]?.current_stock ?? 0,
+    reorder_level: i.property_inventory[0]?.reorder_level ?? 0,
+  }));
+
+  const lowStock = items.filter((i) => Number(i.current_stock) <= Number(i.reorder_level));
 
   return (
     <div className="space-y-6">
@@ -27,8 +39,8 @@ export default async function InventoryItemsPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title={`All items (${items?.length ?? 0})`} />
-          {!items?.length ? (
+          <CardHeader title={`All items (${items.length})`} />
+          {!items.length ? (
             <EmptyState>No stock items yet.</EmptyState>
           ) : (
             <table className="w-full text-sm">
@@ -79,7 +91,7 @@ export default async function InventoryItemsPage() {
                 <Label>Item</Label>
                 <Select name="inventory_item_id" required>
                   <option value="">Select item…</option>
-                  {items?.map((i) => (
+                  {items.map((i) => (
                     <option key={i.id} value={i.id}>
                       {i.name}
                     </option>

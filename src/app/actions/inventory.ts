@@ -2,16 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
-}
+import { requireUser } from "@/lib/require-user";
 
 export async function createInventoryCategory(formData: FormData) {
   const { supabase } = await requireUser();
@@ -20,27 +11,42 @@ export async function createInventoryCategory(formData: FormData) {
   revalidatePath("/inventory/items");
 }
 
+// inventory_items is a shared, enterprise-wide catalog — stock levels live
+// per-property in property_inventory instead. Creating an item also seeds
+// this property's starting stock row for it.
 export async function createInventoryItem(formData: FormData) {
-  const { supabase } = await requireUser();
-  const { error } = await supabase.from("inventory_items").insert({
-    category_id: (formData.get("category_id") as string) || null,
-    name: String(formData.get("name")),
-    unit: String(formData.get("unit") || "pcs"),
+  const { supabase, propertyId } = await requireUser();
+  const { data: item, error } = await supabase
+    .from("inventory_items")
+    .insert({
+      category_id: (formData.get("category_id") as string) || null,
+      name: String(formData.get("name")),
+      unit: String(formData.get("unit") || "pcs"),
+      unit_cost: Number(formData.get("unit_cost") ?? 0),
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  const { error: stockError } = await supabase.from("property_inventory").insert({
+    property_id: propertyId,
+    inventory_item_id: item.id,
     current_stock: Number(formData.get("current_stock") ?? 0),
     reorder_level: Number(formData.get("reorder_level") ?? 0),
-    unit_cost: Number(formData.get("unit_cost") ?? 0),
   });
-  if (error) throw new Error(error.message);
+  if (stockError) throw new Error(stockError.message);
+
   revalidatePath("/inventory/items");
 }
 
 export async function recordStockMovement(formData: FormData) {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, propertyId } = await requireUser();
   const movementType = String(formData.get("movement_type")) as "adjustment" | "consumption" | "wastage";
   const rawQty = Number(formData.get("quantity"));
   const quantity = movementType === "adjustment" ? rawQty : Math.abs(rawQty);
 
   const { error } = await supabase.from("stock_movements").insert({
+    property_id: propertyId,
     inventory_item_id: String(formData.get("inventory_item_id")),
     movement_type: movementType,
     quantity,
@@ -65,10 +71,11 @@ export async function createSupplier(formData: FormData) {
 }
 
 export async function createPurchaseOrder(formData: FormData) {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, propertyId } = await requireUser();
   const { data, error } = await supabase
     .from("purchase_orders")
     .insert({
+      property_id: propertyId,
       supplier_id: String(formData.get("supplier_id")),
       expected_date: (formData.get("expected_date") as string) || null,
       notes: (formData.get("notes") as string) || null,

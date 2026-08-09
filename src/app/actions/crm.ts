@@ -1,20 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
-}
+import { requireUser } from "@/lib/require-user";
 
 export async function createCampaign(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const { error } = await supabase.from("crm_campaigns").insert({
+    property_id: propertyId,
     name: String(formData.get("name")),
     channel: String(formData.get("channel")),
     audience: String(formData.get("audience")),
@@ -32,8 +24,9 @@ export async function updateCampaignStatus(campaignId: string, status: "draft" |
 }
 
 export async function createLead(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const { error } = await supabase.from("crm_leads").insert({
+    property_id: propertyId,
     name: String(formData.get("name")),
     source: (formData.get("source") as string) || null,
   });

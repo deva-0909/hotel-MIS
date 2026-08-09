@@ -28,32 +28,43 @@ export default async function DashboardPage() {
     { data: arrivals },
     { data: departures },
     { data: openOrders },
-    { data: inventoryItems },
+    { data: rawInventoryItems },
     { data: inHouseRates },
   ] = await Promise.all([
-    supabase.from("rooms").select("status"),
+    supabase.from("rooms").select("status").eq("property_id", org.propertyId),
     supabase
       .from("reservations")
       .select("id, reservation_number, guests(full_name), rooms(room_number)")
+      .eq("property_id", org.propertyId)
       .eq("check_in_date", today)
       .eq("status", "confirmed"),
     supabase
       .from("reservations")
       .select("id, reservation_number, guests(full_name), rooms(room_number)")
+      .eq("property_id", org.propertyId)
       .eq("check_out_date", today)
       .eq("status", "checked_in"),
     supabase
       .from("orders")
       .select("id, order_number, order_type, status, restaurant_tables(table_number)")
+      .eq("property_id", org.propertyId)
       .in("status", ["open", "sent_to_kitchen", "preparing", "ready", "served"]),
-    supabase.from("inventory_items").select("id, name, current_stock, reorder_level, unit"),
-    supabase.from("reservations").select("rate_per_night").eq("status", "checked_in"),
+    supabase
+      .from("inventory_items")
+      .select("id, name, unit, property_inventory(current_stock, reorder_level)")
+      .eq("property_inventory.property_id", org.propertyId),
+    supabase.from("reservations").select("rate_per_night").eq("property_id", org.propertyId).eq("status", "checked_in"),
   ]);
 
   const occupied = rooms?.filter((r) => r.status === "occupied").length ?? 0;
   const totalRooms = rooms?.length ?? 0;
   const occupancyPct = totalRooms ? Math.round((occupied / totalRooms) * 100) : 0;
-  const lowStock = inventoryItems?.filter((i) => Number(i.current_stock) <= Number(i.reorder_level)) ?? [];
+  const inventoryItems = (rawInventoryItems ?? []).map((i) => ({
+    ...i,
+    current_stock: i.property_inventory[0]?.current_stock ?? 0,
+    reorder_level: i.property_inventory[0]?.reorder_level ?? 0,
+  }));
+  const lowStock = inventoryItems.filter((i) => Number(i.current_stock) <= Number(i.reorder_level));
   const adr = inHouseRates?.length
     ? inHouseRates.reduce((sum, r) => sum + Number(r.rate_per_night), 0) / inHouseRates.length
     : 0;

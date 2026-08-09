@@ -21,9 +21,14 @@ export default async function AccountsDepartmentPage() {
     supabase
       .from("invoices")
       .select("id, invoice_number, total_amount, amount_paid, status, guests(full_name)")
+      .eq("property_id", org.propertyId)
       .order("created_at", { ascending: false })
       .limit(10),
-    supabase.from("invoices").select("total_amount, amount_paid, status").gte("created_at", monthStart.toISOString()),
+    supabase
+      .from("invoices")
+      .select("total_amount, amount_paid, status")
+      .eq("property_id", org.propertyId)
+      .gte("created_at", monthStart.toISOString()),
   ]);
 
   const revenueMtd = monthInvoices?.reduce((sum, i) => sum + Number(i.amount_paid), 0) ?? 0;

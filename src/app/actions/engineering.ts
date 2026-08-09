@@ -1,20 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
-}
+import { requireUser } from "@/lib/require-user";
 
 export async function createAsset(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const { error } = await supabase.from("engineering_assets").insert({
+    property_id: propertyId,
     name: String(formData.get("name")),
     category: String(formData.get("category")),
     location: (formData.get("location") as string) || null,
@@ -34,8 +26,9 @@ export async function updateAssetStatus(assetId: string, status: "operational" |
 }
 
 export async function createWorkOrder(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, propertyId } = await requireUser();
   const { error } = await supabase.from("work_orders").insert({
+    property_id: propertyId,
     location: String(formData.get("location")),
     issue: String(formData.get("issue")),
     priority: String(formData.get("priority") || "medium"),

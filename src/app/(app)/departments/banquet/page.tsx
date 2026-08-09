@@ -29,15 +29,17 @@ export default async function BanquetDepartmentPage() {
     supabase
       .from("banquet_events")
       .select("id, event_name, client_name, covers, start_at, end_at, status, value_amount, banquet_venues(name)")
+      .eq("property_id", org.propertyId)
       .order("start_at", { ascending: true }),
-    supabase.from("banquet_venues").select("id, name, capacity, buffer_minutes").order("name"),
+    supabase.from("banquet_venues").select("id, name, capacity, buffer_minutes").eq("property_id", org.propertyId).order("name"),
     supabase
       .from("banquet_events")
       .select("id, covers")
+      .eq("property_id", org.propertyId)
       .neq("status", "cancelled")
       .gte("start_at", now.toISOString())
       .lte("start_at", weekAhead.toISOString()),
-    supabase.from("banquet_menu_packages").select("id, name, description, price_per_cover").order("name"),
+    supabase.from("banquet_menu_packages").select("id, name, description, price_per_cover").eq("property_id", org.propertyId).order("name"),
   ]);
 
   const coversThisWeek = weekEvents?.reduce((sum, e) => sum + e.covers, 0) ?? 0;

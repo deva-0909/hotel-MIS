@@ -14,11 +14,17 @@ export default async function TravelDeskDepartmentPage() {
     supabase
       .from("travel_bookings")
       .select("id, service_type, vendor, scheduled_at, status, walk_in_name, guests(full_name), travel_vehicles(name)")
+      .eq("property_id", org.propertyId)
       .order("scheduled_at", { ascending: false })
       .limit(15),
-    supabase.from("travel_vehicles").select("id, name, status"),
+    supabase.from("travel_vehicles").select("id, name, status").eq("property_id", org.propertyId),
     supabase.from("guests").select("id, full_name").order("full_name").limit(200),
-    supabase.from("travel_bookings").select("id").gte("scheduled_at", `${today}T00:00:00Z`).lte("scheduled_at", `${today}T23:59:59Z`),
+    supabase
+      .from("travel_bookings")
+      .select("id")
+      .eq("property_id", org.propertyId)
+      .gte("scheduled_at", `${today}T00:00:00Z`)
+      .lte("scheduled_at", `${today}T23:59:59Z`),
   ]);
 
   const available = vehicles?.filter((v) => v.status === "available").length ?? 0;

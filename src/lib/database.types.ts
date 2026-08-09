@@ -96,6 +96,7 @@ export type Database = {
           end_at: string
           event_name: string
           id: string
+          property_id: string
           start_at: string
           status: string
           value_amount: number
@@ -108,6 +109,7 @@ export type Database = {
           end_at: string
           event_name: string
           id?: string
+          property_id: string
           start_at: string
           status?: string
           value_amount?: number
@@ -120,12 +122,20 @@ export type Database = {
           end_at?: string
           event_name?: string
           id?: string
+          property_id?: string
           start_at?: string
           status?: string
           value_amount?: number
           venue_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "banquet_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "banquet_events_venue_id_fkey"
             columns: ["venue_id"]
@@ -142,6 +152,7 @@ export type Database = {
           id: string
           name: string
           price_per_cover: number
+          property_id: string
         }
         Insert: {
           created_at?: string
@@ -149,6 +160,7 @@ export type Database = {
           id?: string
           name: string
           price_per_cover?: number
+          property_id: string
         }
         Update: {
           created_at?: string
@@ -156,8 +168,17 @@ export type Database = {
           id?: string
           name?: string
           price_per_cover?: number
+          property_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "banquet_menu_packages_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       banquet_venues: {
         Row: {
@@ -165,20 +186,60 @@ export type Database = {
           capacity: number
           id: string
           name: string
+          property_id: string
         }
         Insert: {
           buffer_minutes?: number
           capacity?: number
           id?: string
           name: string
+          property_id: string
         }
         Update: {
           buffer_minutes?: number
           capacity?: number
           id?: string
           name?: string
+          property_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "banquet_venues_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buildings: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buildings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_campaigns: {
         Row: {
@@ -188,6 +249,7 @@ export type Database = {
           end_date: string | null
           id: string
           name: string
+          property_id: string
           start_date: string | null
           status: string
         }
@@ -198,6 +260,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           name: string
+          property_id: string
           start_date?: string | null
           status?: string
         }
@@ -208,16 +271,26 @@ export type Database = {
           end_date?: string | null
           id?: string
           name?: string
+          property_id?: string
           start_date?: string | null
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_campaigns_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_leads: {
         Row: {
           created_at: string
           id: string
           name: string
+          property_id: string
           source: string | null
           status: string
         }
@@ -225,6 +298,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          property_id: string
           source?: string | null
           status?: string
         }
@@ -232,10 +306,19 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          property_id?: string
           source?: string | null
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       engineering_assets: {
         Row: {
@@ -246,6 +329,7 @@ export type Database = {
           location: string | null
           name: string
           next_service_date: string | null
+          property_id: string
           status: string
         }
         Insert: {
@@ -256,6 +340,7 @@ export type Database = {
           location?: string | null
           name: string
           next_service_date?: string | null
+          property_id: string
           status?: string
         }
         Update: {
@@ -266,9 +351,50 @@ export type Database = {
           location?: string | null
           name?: string
           next_service_date?: string | null
+          property_id?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "engineering_assets_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      floors: {
+        Row: {
+          building_id: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          building_id: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          building_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floors_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       folio_charges: {
         Row: {
@@ -500,10 +626,8 @@ export type Database = {
         Row: {
           category_id: string | null
           created_at: string
-          current_stock: number
           id: string
           name: string
-          reorder_level: number
           unit: string
           unit_cost: number
           updated_at: string
@@ -511,10 +635,8 @@ export type Database = {
         Insert: {
           category_id?: string | null
           created_at?: string
-          current_stock?: number
           id?: string
           name: string
-          reorder_level?: number
           unit?: string
           unit_cost?: number
           updated_at?: string
@@ -522,10 +644,8 @@ export type Database = {
         Update: {
           category_id?: string | null
           created_at?: string
-          current_stock?: number
           id?: string
           name?: string
-          reorder_level?: number
           unit?: string
           unit_cost?: number
           updated_at?: string
@@ -599,6 +719,7 @@ export type Database = {
           issued_at: string | null
           notes: string | null
           order_id: string | null
+          property_id: string
           reservation_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
@@ -617,6 +738,7 @@ export type Database = {
           issued_at?: string | null
           notes?: string | null
           order_id?: string | null
+          property_id: string
           reservation_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
@@ -635,6 +757,7 @@ export type Database = {
           issued_at?: string | null
           notes?: string | null
           order_id?: string | null
+          property_id?: string
           reservation_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
@@ -665,6 +788,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_reservation_id_fkey"
             columns: ["reservation_id"]
             isOneToOne: false
@@ -679,6 +809,7 @@ export type Database = {
           guest_id: string | null
           id: string
           item_count: number
+          property_id: string
           room_id: string | null
           status: string
         }
@@ -687,6 +818,7 @@ export type Database = {
           guest_id?: string | null
           id?: string
           item_count?: number
+          property_id: string
           room_id?: string | null
           status?: string
         }
@@ -695,6 +827,7 @@ export type Database = {
           guest_id?: string | null
           id?: string
           item_count?: number
+          property_id?: string
           room_id?: string | null
           status?: string
         }
@@ -704,6 +837,13 @@ export type Database = {
             columns: ["guest_id"]
             isOneToOne: false
             referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laundry_batches_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
@@ -757,19 +897,30 @@ export type Database = {
         Row: {
           id: string
           name: string
+          restaurant_id: string
           sort_order: number
         }
         Insert: {
           id?: string
           name: string
+          restaurant_id: string
           sort_order?: number
         }
         Update: {
           id?: string
           name?: string
+          restaurant_id?: string
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "menu_categories_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       menu_items: {
         Row: {
@@ -881,6 +1032,7 @@ export type Database = {
           notes: string | null
           order_number: string
           order_type: Database["public"]["Enums"]["order_type"]
+          property_id: string
           reservation_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           table_id: string | null
@@ -895,6 +1047,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
+          property_id: string
           reservation_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           table_id?: string | null
@@ -909,6 +1062,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
+          property_id?: string
           reservation_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           table_id?: string | null
@@ -921,6 +1075,13 @@ export type Database = {
             columns: ["guest_id"]
             isOneToOne: false
             referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
@@ -998,6 +1159,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
+          property_id: string | null
           role: Database["public"]["Enums"]["staff_role"]
         }
         Insert: {
@@ -1006,6 +1168,7 @@ export type Database = {
           full_name: string
           id: string
           phone?: string | null
+          property_id?: string | null
           role: Database["public"]["Enums"]["staff_role"]
         }
         Update: {
@@ -1014,9 +1177,90 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          property_id?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
         }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      properties: {
+        Row: {
+          address: string | null
+          city: string | null
+          code: string
+          created_at: string
+          gstin: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          code: string
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          code?: string
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
         Relationships: []
+      }
+      property_inventory: {
+        Row: {
+          current_stock: number
+          inventory_item_id: string
+          property_id: string
+          reorder_level: number
+        }
+        Insert: {
+          current_stock?: number
+          inventory_item_id: string
+          property_id: string
+          reorder_level?: number
+        }
+        Update: {
+          current_stock?: number
+          inventory_item_id?: string
+          property_id?: string
+          reorder_level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_inventory_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_inventory_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_order_items: {
         Row: {
@@ -1069,6 +1313,7 @@ export type Database = {
           notes: string | null
           order_date: string
           po_number: string
+          property_id: string
           status: Database["public"]["Enums"]["po_status"]
           supplier_id: string
           updated_at: string
@@ -1081,6 +1326,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           po_number?: string
+          property_id: string
           status?: Database["public"]["Enums"]["po_status"]
           supplier_id: string
           updated_at?: string
@@ -1093,6 +1339,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           po_number?: string
+          property_id?: string
           status?: Database["public"]["Enums"]["po_status"]
           supplier_id?: string
           updated_at?: string
@@ -1103,6 +1350,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
@@ -1127,6 +1381,7 @@ export type Database = {
           guest_id: string
           id: string
           notes: string | null
+          property_id: string
           rate_per_night: number
           reservation_number: string
           room_id: string | null
@@ -1146,6 +1401,7 @@ export type Database = {
           guest_id: string
           id?: string
           notes?: string | null
+          property_id: string
           rate_per_night?: number
           reservation_number?: string
           room_id?: string | null
@@ -1165,6 +1421,7 @@ export type Database = {
           guest_id?: string
           id?: string
           notes?: string | null
+          property_id?: string
           rate_per_night?: number
           reservation_number?: string
           room_id?: string | null
@@ -1188,6 +1445,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reservations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reservations_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -1208,6 +1472,7 @@ export type Database = {
           capacity: number
           created_at: string
           id: string
+          restaurant_id: string
           status: Database["public"]["Enums"]["table_status"]
           table_number: string
           updated_at: string
@@ -1216,6 +1481,7 @@ export type Database = {
           capacity?: number
           created_at?: string
           id?: string
+          restaurant_id: string
           status?: Database["public"]["Enums"]["table_status"]
           table_number: string
           updated_at?: string
@@ -1224,11 +1490,55 @@ export type Database = {
           capacity?: number
           created_at?: string
           id?: string
+          restaurant_id?: string
           status?: Database["public"]["Enums"]["table_status"]
           table_number?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_tables_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurants: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurants_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_types: {
         Row: {
@@ -1239,6 +1549,7 @@ export type Database = {
           id: string
           max_occupancy: number
           name: string
+          property_id: string
         }
         Insert: {
           amenities?: string | null
@@ -1248,6 +1559,7 @@ export type Database = {
           id?: string
           max_occupancy?: number
           name: string
+          property_id: string
         }
         Update: {
           amenities?: string | null
@@ -1257,41 +1569,77 @@ export type Database = {
           id?: string
           max_occupancy?: number
           name?: string
+          property_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "room_types_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rooms: {
         Row: {
+          building_id: string
           created_at: string
-          floor: string | null
+          floor_id: string
           id: string
           notes: string | null
+          property_id: string
           room_number: string
           room_type_id: string
           status: Database["public"]["Enums"]["room_status"]
           updated_at: string
         }
         Insert: {
+          building_id: string
           created_at?: string
-          floor?: string | null
+          floor_id: string
           id?: string
           notes?: string | null
+          property_id: string
           room_number: string
           room_type_id: string
           status?: Database["public"]["Enums"]["room_status"]
           updated_at?: string
         }
         Update: {
+          building_id?: string
           created_at?: string
-          floor?: string | null
+          floor_id?: string
           id?: string
           notes?: string | null
+          property_id?: string
           room_number?: string
           room_type_id?: string
           status?: Database["public"]["Enums"]["room_status"]
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "rooms_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rooms_room_type_id_fkey"
             columns: ["room_type_id"]
@@ -1306,6 +1654,7 @@ export type Database = {
           created_at: string
           guest_id: string | null
           id: string
+          property_id: string
           scheduled_at: string
           service_id: string
           status: string
@@ -1316,6 +1665,7 @@ export type Database = {
           created_at?: string
           guest_id?: string | null
           id?: string
+          property_id: string
           scheduled_at: string
           service_id: string
           status?: string
@@ -1326,6 +1676,7 @@ export type Database = {
           created_at?: string
           guest_id?: string | null
           id?: string
+          property_id?: string
           scheduled_at?: string
           service_id?: string
           status?: string
@@ -1338,6 +1689,13 @@ export type Database = {
             columns: ["guest_id"]
             isOneToOne: false
             referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spa_bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
@@ -1355,20 +1713,31 @@ export type Database = {
           id: string
           name: string
           price: number
+          property_id: string
         }
         Insert: {
           duration_minutes?: number
           id?: string
           name: string
           price?: number
+          property_id: string
         }
         Update: {
           duration_minutes?: number
           id?: string
           name?: string
           price?: number
+          property_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "spa_services_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_movements: {
         Row: {
@@ -1378,6 +1747,7 @@ export type Database = {
           inventory_item_id: string
           movement_type: Database["public"]["Enums"]["stock_movement_type"]
           notes: string | null
+          property_id: string
           quantity: number
           reference_id: string | null
           reference_table: string | null
@@ -1389,6 +1759,7 @@ export type Database = {
           inventory_item_id: string
           movement_type: Database["public"]["Enums"]["stock_movement_type"]
           notes?: string | null
+          property_id: string
           quantity: number
           reference_id?: string | null
           reference_table?: string | null
@@ -1400,6 +1771,7 @@ export type Database = {
           inventory_item_id?: string
           movement_type?: Database["public"]["Enums"]["stock_movement_type"]
           notes?: string | null
+          property_id?: string
           quantity?: number
           reference_id?: string | null
           reference_table?: string | null
@@ -1417,6 +1789,13 @@ export type Database = {
             columns: ["inventory_item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -1456,6 +1835,7 @@ export type Database = {
           created_at: string
           guest_id: string | null
           id: string
+          property_id: string
           scheduled_at: string | null
           service_type: string
           status: string
@@ -1467,6 +1847,7 @@ export type Database = {
           created_at?: string
           guest_id?: string | null
           id?: string
+          property_id: string
           scheduled_at?: string | null
           service_type: string
           status?: string
@@ -1478,6 +1859,7 @@ export type Database = {
           created_at?: string
           guest_id?: string | null
           id?: string
+          property_id?: string
           scheduled_at?: string | null
           service_type?: string
           status?: string
@@ -1494,6 +1876,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "travel_bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "travel_bookings_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
@@ -1506,22 +1895,33 @@ export type Database = {
         Row: {
           id: string
           name: string
+          property_id: string
           status: string
           vehicle_type: string
         }
         Insert: {
           id?: string
           name: string
+          property_id: string
           status?: string
           vehicle_type: string
         }
         Update: {
           id?: string
           name?: string
+          property_id?: string
           status?: string
           vehicle_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "travel_vehicles_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       work_orders: {
         Row: {
@@ -1532,6 +1932,7 @@ export type Database = {
           issue: string
           location: string
           priority: string
+          property_id: string
           status: string
           updated_at: string
           wo_number: string
@@ -1544,6 +1945,7 @@ export type Database = {
           issue: string
           location: string
           priority?: string
+          property_id: string
           status?: string
           updated_at?: string
           wo_number?: string
@@ -1556,6 +1958,7 @@ export type Database = {
           issue?: string
           location?: string
           priority?: string
+          property_id?: string
           status?: string
           updated_at?: string
           wo_number?: string
@@ -1566,6 +1969,13 @@ export type Database = {
             columns: ["asset_id"]
             isOneToOne: false
             referencedRelation: "engineering_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -1593,7 +2003,12 @@ export type Database = {
         Args: { p_reservation_id: string; p_staff_id: string }
         Returns: string
       }
+      is_admin_staff: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
+      is_staff_for_property: {
+        Args: { p_property_id: string }
+        Returns: boolean
+      }
       next_doc_number: {
         Args: { prefix: string; seq_name: string }
         Returns: string

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
 import { addOrderItem } from "@/app/actions/restaurant";
 import { Card, CardHeader, Badge, Select, Input, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
@@ -18,6 +19,7 @@ const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red" |
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const org = await getOrgContext();
 
   const { data: order } = await supabase
     .from("orders")
@@ -29,13 +31,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   if (!order) notFound();
 
+  const { data: restaurants } = await supabase.from("restaurants").select("id").eq("property_id", org.propertyId);
+  const { data: categories } = await supabase
+    .from("menu_categories")
+    .select("id")
+    .in("restaurant_id", (restaurants ?? []).map((r) => r.id));
+  const categoryIds = (categories ?? []).map((c) => c.id);
+
   const [{ data: items }, { data: menuItems }] = await Promise.all([
     supabase
       .from("order_items")
       .select("id, quantity, unit_price, status, menu_items(name)")
       .eq("order_id", id)
       .order("created_at"),
-    supabase.from("menu_items").select("id, name, price").eq("is_available", true).order("name"),
+    categoryIds.length
+      ? supabase.from("menu_items").select("id, name, price").eq("is_available", true).in("category_id", categoryIds).order("name")
+      : Promise.resolve({ data: [] }),
   ]);
 
   const total = items?.filter((i) => i.status !== "cancelled").reduce((sum, i) => sum + i.quantity * i.unit_price, 0) ?? 0;

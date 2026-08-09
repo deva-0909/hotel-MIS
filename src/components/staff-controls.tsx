@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { toggleStaffActive, updateStaffRole } from "@/app/actions/staff";
+import { toggleStaffActive, updateStaffRole, updateStaffProperty } from "@/app/actions/staff";
 import { Select } from "@/components/ui";
 import type { Database } from "@/lib/database.types";
 
@@ -30,6 +30,35 @@ export function RoleSelect({ staffId, role }: { staffId: string; role: StaffRole
       {ROLES.map((r) => (
         <option key={r} value={r}>
           {r.replace(/_/g, " ")}
+        </option>
+      ))}
+    </Select>
+  );
+}
+
+export function PropertySelect({
+  staffId,
+  propertyId,
+  properties,
+}: {
+  staffId: string;
+  propertyId: string | null;
+  properties: { id: string; name: string }[];
+}) {
+  const [pending, startTransition] = useTransition();
+  return (
+    <Select
+      value={propertyId ?? ""}
+      disabled={pending}
+      onChange={(e) => startTransition(() => updateStaffProperty(staffId, e.target.value))}
+      className="text-xs"
+    >
+      <option value="" disabled>
+        Unassigned
+      </option>
+      {properties.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
         </option>
       ))}
     </Select>

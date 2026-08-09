@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
 import { createRoom, createRoomType } from "@/app/actions/hotel";
-import { Card, CardHeader, Badge, Input, Select, Label, EmptyState } from "@/components/ui";
+import { Card, CardHeader, Badge, Breadcrumb, Input, Select, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { RoomStatusControl } from "@/components/room-status-control";
 
@@ -15,13 +16,21 @@ const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red" |
 
 export default async function RoomsPage() {
   const supabase = await createClient();
-  const [{ data: rooms }, { data: roomTypes }] = await Promise.all([
-    supabase.from("rooms").select("id, room_number, floor, status, room_types(name, base_rate)").order("room_number"),
-    supabase.from("room_types").select("id, name, base_rate, max_occupancy").order("base_rate"),
+  const org = await getOrgContext();
+
+  const [{ data: rooms }, { data: roomTypes }, { data: buildings }] = await Promise.all([
+    supabase
+      .from("rooms")
+      .select("id, room_number, status, room_types(name, base_rate), floors(name, buildings(name))")
+      .eq("property_id", org.propertyId)
+      .order("room_number"),
+    supabase.from("room_types").select("id, name, base_rate, max_occupancy").eq("property_id", org.propertyId).order("base_rate"),
+    supabase.from("buildings").select("id, name, floors(id, name)").eq("property_id", org.propertyId).order("name"),
   ]);
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[org.corporateName, org.regionName, org.hotelName, "Rooms"]} />
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Rooms</h1>
       </div>
@@ -37,7 +46,7 @@ export default async function RoomsPage() {
                 <tr className="border-b border-gray-100 text-left text-xs uppercase text-gray-400">
                   <th className="px-5 py-2 font-medium">Room</th>
                   <th className="px-5 py-2 font-medium">Type</th>
-                  <th className="px-5 py-2 font-medium">Floor</th>
+                  <th className="px-5 py-2 font-medium">Building / Floor</th>
                   <th className="px-5 py-2 font-medium">Rate</th>
                   <th className="px-5 py-2 font-medium">Status</th>
                 </tr>
@@ -47,7 +56,9 @@ export default async function RoomsPage() {
                   <tr key={room.id} className="border-b border-gray-50 last:border-0">
                     <td className="px-5 py-2.5 font-medium text-gray-900">{room.room_number}</td>
                     <td className="px-5 py-2.5 text-gray-600">{room.room_types?.name}</td>
-                    <td className="px-5 py-2.5 text-gray-600">{room.floor ?? "—"}</td>
+                    <td className="px-5 py-2.5 text-gray-600">
+                      {room.floors?.buildings?.name} / {room.floors?.name}
+                    </td>
                     <td className="px-5 py-2.5 text-gray-600">₹{room.room_types?.base_rate}</td>
                     <td className="px-5 py-2.5">
                       <div className="flex items-center gap-2">
@@ -117,7 +128,18 @@ export default async function RoomsPage() {
               </div>
               <div>
                 <Label>Floor</Label>
-                <Input name="floor" placeholder="e.g. 1" />
+                <Select name="floor_id" required>
+                  <option value="">Select floor…</option>
+                  {buildings?.map((b) => (
+                    <optgroup key={b.id} label={b.name}>
+                      {b.floors.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </Select>
               </div>
               <SubmitButton>Add room</SubmitButton>
             </form>

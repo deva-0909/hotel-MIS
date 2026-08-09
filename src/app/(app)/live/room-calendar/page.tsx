@@ -39,10 +39,14 @@ export default async function RoomCalendarPage({ searchParams }: { searchParams:
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const { data: rooms } = await supabase.from("rooms").select("id, room_number, floor, status").order("room_number");
-  const floors = Array.from(new Set((rooms ?? []).map((r) => r.floor).filter(Boolean))) as string[];
+  const { data: rooms } = await supabase
+    .from("rooms")
+    .select("id, room_number, status, floors(name)")
+    .eq("property_id", org.propertyId)
+    .order("room_number");
+  const floors = Array.from(new Set((rooms ?? []).map((r) => r.floors?.name).filter(Boolean))) as string[];
   const activeFloor = floor && floors.includes(floor) ? floor : floors[0];
-  const floorRooms = rooms?.filter((r) => r.floor === activeFloor) ?? [];
+  const floorRooms = rooms?.filter((r) => r.floors?.name === activeFloor) ?? [];
 
   const dates: string[] = [];
   const today = new Date();
@@ -55,6 +59,7 @@ export default async function RoomCalendarPage({ searchParams }: { searchParams:
   const { data: reservations } = await supabase
     .from("reservations")
     .select("room_id, check_in_date, check_out_date, status")
+    .eq("property_id", org.propertyId)
     .in("status", ["confirmed", "checked_in"])
     .lte("check_in_date", dates[dates.length - 1])
     .gte("check_out_date", dates[0]);

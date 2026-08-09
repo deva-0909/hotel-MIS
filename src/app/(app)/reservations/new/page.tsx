@@ -1,12 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/org-context";
 import { ReservationForm } from "./reservation-form";
 
 export default async function NewReservationPage() {
   const supabase = await createClient();
+  const org = await getOrgContext();
   const [{ data: guests }, { data: roomTypes }, { data: rooms }] = await Promise.all([
     supabase.from("guests").select("id, full_name, phone").order("full_name"),
-    supabase.from("room_types").select("id, name, base_rate").order("base_rate"),
-    supabase.from("rooms").select("id, room_number, room_type_id, status").order("room_number"),
+    supabase.from("room_types").select("id, name, base_rate").eq("property_id", org.propertyId).order("base_rate"),
+    supabase.from("rooms").select("id, room_number, room_type_id, status").eq("property_id", org.propertyId).order("room_number"),
   ]);
 
   return (

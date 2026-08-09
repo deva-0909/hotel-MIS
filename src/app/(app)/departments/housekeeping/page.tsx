@@ -8,10 +8,12 @@ export default async function HousekeepingDepartmentPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const [{ data: rooms }, { data: tasks }] = await Promise.all([
-    supabase.from("rooms").select("id, room_number, status").order("room_number"),
-    supabase.from("housekeeping_tasks").select("room_id, status, attendant, priority"),
-  ]);
+  const { data: rooms } = await supabase.from("rooms").select("id, room_number, status").eq("property_id", org.propertyId).order("room_number");
+  const roomIds = (rooms ?? []).map((r) => r.id);
+
+  const { data: tasks } = roomIds.length
+    ? await supabase.from("housekeeping_tasks").select("room_id, status, attendant, priority").in("room_id", roomIds)
+    : { data: [] };
 
   const taskByRoom = new Map((tasks ?? []).map((t) => [t.room_id, t]));
   const clean = rooms?.filter((r) => r.status !== "dirty" && r.status !== "maintenance" && r.status !== "out_of_order").length ?? 0;
