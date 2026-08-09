@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { createMenuCategory, createMenuItem } from "@/app/actions/restaurant";
+import { adoptMenuCategoryTemplate } from "@/app/actions/templates";
 import { Card, CardHeader, Badge, Breadcrumb, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { MenuItemToggle } from "@/components/menu-item-toggle";
@@ -9,9 +10,10 @@ export default async function MenuPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const [{ data: restaurants }, { data: kitchens }] = await Promise.all([
+  const [{ data: restaurants }, { data: kitchens }, { data: categoryTemplates }] = await Promise.all([
     supabase.from("restaurants").select("id, name").eq("property_id", org.propertyId).order("name"),
     supabase.from("kitchens").select("id, name").order("name"),
+    supabase.from("corporate_menu_category_templates").select("id, name").order("sort_order"),
   ]);
   const restaurantIds = (restaurants ?? []).map((r) => r.id);
   const restaurantById = new Map((restaurants ?? []).map((r) => [r.id, r.name]));
@@ -148,6 +150,33 @@ export default async function MenuPage() {
               </div>
               <SubmitButton>Add category</SubmitButton>
             </form>
+            {categoryTemplates && categoryTemplates.length > 0 && (
+              <form action={adoptMenuCategoryTemplate} className="space-y-2 border-t border-gray-100 px-5 py-4">
+                <div>
+                  <Label>Or adopt a corporate template</Label>
+                  <Select name="template_id" required>
+                    <option value="">Select template…</option>
+                    {categoryTemplates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label>Into restaurant</Label>
+                  <Select name="restaurant_id" required>
+                    <option value="">Select restaurant…</option>
+                    {restaurants?.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <SubmitButton variant="secondary">Adopt</SubmitButton>
+              </form>
+            )}
           </Card>
 
           <Card>

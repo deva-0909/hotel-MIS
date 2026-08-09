@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
-import { Card, CardHeader, Breadcrumb, StatTile, EmptyState, Input, Label } from "@/components/ui";
+import { Card, CardHeader, Breadcrumb, StatTile, EmptyState, Input, Label, Select } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createVenue, createMenuPackage } from "@/app/actions/banquet";
+import { adoptBanquetPackageTemplate } from "@/app/actions/templates";
 import { EventStatusControl, NewEventForm } from "./banquet-actions";
 
 function formatRange(startAt: string, endAt: string) {
@@ -25,7 +26,7 @@ export default async function BanquetDepartmentPage() {
   const weekAhead = new Date();
   weekAhead.setDate(weekAhead.getDate() + 7);
 
-  const [{ data: events }, { data: venues }, { data: weekEvents }, { data: packages }] = await Promise.all([
+  const [{ data: events }, { data: venues }, { data: weekEvents }, { data: packages }, { data: packageTemplates }] = await Promise.all([
     supabase
       .from("banquet_events")
       .select("id, event_name, client_name, covers, start_at, end_at, status, value_amount, banquet_venues(name)")
@@ -40,6 +41,7 @@ export default async function BanquetDepartmentPage() {
       .gte("start_at", now.toISOString())
       .lte("start_at", weekAhead.toISOString()),
     supabase.from("banquet_menu_packages").select("id, name, description, price_per_cover").eq("property_id", org.propertyId).order("name"),
+    supabase.from("corporate_banquet_package_templates").select("id, name, price_per_cover").order("name"),
   ]);
 
   const coversThisWeek = weekEvents?.reduce((sum, e) => sum + e.covers, 0) ?? 0;
@@ -189,6 +191,22 @@ export default async function BanquetDepartmentPage() {
             </div>
             <SubmitButton variant="secondary">Add package</SubmitButton>
           </form>
+          {packageTemplates && packageTemplates.length > 0 && (
+            <form action={adoptBanquetPackageTemplate} className="flex items-end gap-2 border-t border-black/10 p-4">
+              <div className="flex-1">
+                <Label>Or adopt a corporate template</Label>
+                <Select name="template_id" required>
+                  <option value="">Select template…</option>
+                  {packageTemplates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} — ₹{t.price_per_cover}/cover
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <SubmitButton variant="secondary">Adopt</SubmitButton>
+            </form>
+          )}
         </Card>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { createRoom, createRoomType } from "@/app/actions/hotel";
+import { adoptRoomTypeTemplate } from "@/app/actions/templates";
 import { Card, CardHeader, Badge, Breadcrumb, Input, Select, Label, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { RoomStatusControl } from "@/components/room-status-control";
@@ -18,7 +19,7 @@ export default async function RoomsPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const [{ data: rooms }, { data: roomTypes }, { data: buildings }] = await Promise.all([
+  const [{ data: rooms }, { data: roomTypes }, { data: buildings }, { data: roomTypeTemplates }] = await Promise.all([
     supabase
       .from("rooms")
       .select("id, room_number, status, room_types(name, base_rate), floors(name, buildings(name))")
@@ -26,6 +27,7 @@ export default async function RoomsPage() {
       .order("room_number"),
     supabase.from("room_types").select("id, name, base_rate, max_occupancy").eq("property_id", org.propertyId).order("base_rate"),
     supabase.from("buildings").select("id, name, floors(id, name)").eq("property_id", org.propertyId).order("name"),
+    supabase.from("corporate_room_type_templates").select("id, name, base_rate").order("name"),
   ]);
 
   return (
@@ -106,6 +108,22 @@ export default async function RoomsPage() {
               </div>
               <SubmitButton>Add room type</SubmitButton>
             </form>
+            {roomTypeTemplates && roomTypeTemplates.length > 0 && (
+              <form action={adoptRoomTypeTemplate} className="flex items-end gap-2 border-t border-gray-100 px-5 py-4">
+                <div className="flex-1">
+                  <Label>Or adopt a corporate template</Label>
+                  <Select name="template_id" required>
+                    <option value="">Select template…</option>
+                    {roomTypeTemplates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} — ₹{t.base_rate}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <SubmitButton variant="secondary">Adopt</SubmitButton>
+              </form>
+            )}
           </Card>
 
           <Card>
