@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
-import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label } from "@/components/ui";
+import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, Button } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createProperty } from "@/app/actions/property";
 
@@ -17,10 +17,15 @@ export default async function PropertiesPage() {
   return (
     <div className="space-y-6">
       <Breadcrumb items={[org.corporateName, "Properties"]} />
-      <h1 className="text-xl text-gray-900">Properties</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl text-gray-900">Properties</h1>
+        <Link href="/organization/properties/new">
+          <Button variant="secondary">New Property Wizard</Button>
+        </Link>
+      </div>
       <p className="-mt-4 text-sm text-gray-500">
         Every property the enterprise operates. Each has its own buildings, floors, room types, and restaurant
-        outlets.
+        outlets. Use the wizard for a full guided setup, or the quick form below for just the property record.
       </p>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
