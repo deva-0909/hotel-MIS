@@ -87,6 +87,7 @@ export default async function StoresPurchaseDepartmentPage() {
             <Link href="/live/purchase-board"><Button variant="secondary" className="w-full">Approval Board</Button></Link>
             <Link href="/inventory/items"><Button variant="secondary" className="w-full">Stock Items</Button></Link>
             <Link href="/inventory/suppliers"><Button variant="secondary" className="w-full">Suppliers</Button></Link>
+            <Link href="/inventory/transfers"><Button variant="secondary" className="w-full">Inventory Transfers</Button></Link>
           </div>
         </Card>
       </div>

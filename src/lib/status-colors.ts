@@ -15,3 +15,10 @@ export const EVENT_STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gr
   completed: "green",
   cancelled: "red",
 };
+
+export const TRANSFER_STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red" | "purple" | "gold"> = {
+  requested: "gray",
+  in_transit: "amber",
+  received: "green",
+  cancelled: "red",
+};
