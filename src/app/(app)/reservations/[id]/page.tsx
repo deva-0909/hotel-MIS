@@ -54,7 +54,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
             {reservation.guests?.full_name} · {reservation.room_types?.name} · {reservation.check_in_date} → {reservation.check_out_date}
           </p>
         </div>
-        <ReservationLifecycleActions reservationId={reservation.id} status={reservation.status} />
+        <ReservationLifecycleActions reservationId={reservation.id} status={reservation.status} hasRoom={!!reservation.room_id} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

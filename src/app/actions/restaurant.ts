@@ -161,7 +161,7 @@ export async function billOrder(orderId: string) {
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, bill_to_room, guest_id, order_number")
+    .select("id, bill_to_room, guest_id, order_number, reservations(guest_id)")
     .eq("id", orderId)
     .single();
   if (orderError) throw new Error(orderError.message);
@@ -174,7 +174,10 @@ export async function billOrder(orderId: string) {
     return;
   }
 
-  let guestId = order.guest_id;
+  // Not billed to the room, but the order may still be tied to an in-house
+  // guest (e.g. room-service paid on the spot) — use that guest's record
+  // instead of always falling back to an anonymous walk-in.
+  let guestId = order.guest_id ?? order.reservations?.guest_id ?? null;
   if (!guestId) {
     const { data: walkIn, error: guestError } = await supabase
       .from("guests")

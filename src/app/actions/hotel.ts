@@ -85,6 +85,14 @@ export async function createReservation(formData: FormData) {
 
   const roomId = (formData.get("room_id") as string) || null;
 
+  if (roomId) {
+    const { data: room, error: roomError } = await supabase.from("rooms").select("status").eq("id", roomId).maybeSingle();
+    if (roomError) throw new Error(roomError.message);
+    if (!room || !["available", "dirty"].includes(room.status)) {
+      throw new Error("This room is no longer available. Pick a different room.");
+    }
+  }
+
   const { error } = await supabase.from("reservations").insert({
     guest_id: guestId,
     room_id: roomId,
@@ -105,13 +113,30 @@ export async function createReservation(formData: FormData) {
 
 export async function assignRoom(reservationId: string, roomId: string) {
   const { supabase } = await requireUser();
+
+  const { data: room, error: roomError } = await supabase.from("rooms").select("status").eq("id", roomId).maybeSingle();
+  if (roomError) throw new Error(roomError.message);
+  if (!room || !["available", "dirty"].includes(room.status)) {
+    throw new Error("This room is no longer available. Pick a different room.");
+  }
+
   const { error } = await supabase.from("reservations").update({ room_id: roomId }).eq("id", reservationId);
   if (error) throw new Error(error.message);
   revalidatePath(`/reservations/${reservationId}`);
+  revalidatePath("/rooms");
 }
 
 export async function checkInReservation(reservationId: string) {
   const { supabase } = await requireUser();
+
+  const { data: reservation, error: fetchError } = await supabase
+    .from("reservations")
+    .select("room_id")
+    .eq("id", reservationId)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+  if (!reservation.room_id) throw new Error("Assign a room to this reservation before checking in.");
+
   const { error } = await supabase
     .from("reservations")
     .update({ status: "checked_in", actual_check_in_at: new Date().toISOString() })

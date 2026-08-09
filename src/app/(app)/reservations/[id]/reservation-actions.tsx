@@ -38,17 +38,29 @@ export function AssignRoomControl({ reservationId, rooms }: { reservationId: str
   );
 }
 
-export function ReservationLifecycleActions({ reservationId, status }: { reservationId: string; status: string }) {
+export function ReservationLifecycleActions({
+  reservationId,
+  status,
+  hasRoom,
+}: {
+  reservationId: string;
+  status: string;
+  hasRoom: boolean;
+}) {
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {status === "confirmed" && (
         <>
-          <Button disabled={pending} onClick={() => startTransition(() => checkInReservation(reservationId))}>
-            Check in
-          </Button>
+          {hasRoom ? (
+            <Button disabled={pending} onClick={() => startTransition(() => checkInReservation(reservationId))}>
+              Check in
+            </Button>
+          ) : (
+            <span className="text-xs text-gray-400">Assign a room to check in</span>
+          )}
           <Button
             variant="danger"
             disabled={pending}
