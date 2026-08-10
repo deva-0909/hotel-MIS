@@ -97,6 +97,20 @@ export async function createBooking(formData: FormData) {
   if (bookingError) throw new Error(bookingError.message);
 
   for (const room of rooms) {
+    // Real per-date capacity + restriction check (see 0034_rate_plans_and_availability.sql)
+    // — catches over-selling a room type even when no specific room is
+    // picked, and honors min/max-stay, stop-sell, and CTA/CTD, none of
+    // which a room's current status flag can tell you for a future date.
+    const { data: hasAvailability, error: availabilityError } = await supabase.rpc("check_availability", {
+      p_room_type_id: room.roomTypeId,
+      p_check_in: checkInDate,
+      p_check_out: checkOutDate,
+    });
+    if (availabilityError) throw new Error(availabilityError.message);
+    if (!hasAvailability) {
+      throw new Error("No availability for one of the selected room types on these dates.");
+    }
+
     if (room.roomId) {
       const { data: roomRow, error: roomError } = await supabase
         .from("rooms")
@@ -107,6 +121,19 @@ export async function createBooking(formData: FormData) {
       if (roomError) throw new Error(roomError.message);
       if (!roomRow || !["available", "dirty"].includes(roomRow.status)) {
         throw new Error("One of the selected rooms is no longer available. Pick a different room.");
+      }
+
+      const { data: conflicting, error: conflictError } = await supabase
+        .from("reservations")
+        .select("id")
+        .eq("room_id", room.roomId)
+        .in("status", ["confirmed", "checked_in"])
+        .lt("check_in_date", checkOutDate)
+        .gt("check_out_date", checkInDate)
+        .limit(1);
+      if (conflictError) throw new Error(conflictError.message);
+      if (conflicting?.length) {
+        throw new Error("One of the selected rooms is already booked for an overlapping date. Pick a different room.");
       }
     }
 

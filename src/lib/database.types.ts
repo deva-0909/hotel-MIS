@@ -46,6 +46,76 @@ export type Database = {
           },
         ]
       }
+      availability_restrictions: {
+        Row: {
+          closed_to_arrival: boolean
+          closed_to_departure: boolean
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          max_stay: number | null
+          min_stay: number | null
+          notes: string | null
+          property_id: string
+          room_type_id: string
+          start_date: string
+          stop_sell: boolean
+        }
+        Insert: {
+          closed_to_arrival?: boolean
+          closed_to_departure?: boolean
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          max_stay?: number | null
+          min_stay?: number | null
+          notes?: string | null
+          property_id: string
+          room_type_id: string
+          start_date: string
+          stop_sell?: boolean
+        }
+        Update: {
+          closed_to_arrival?: boolean
+          closed_to_departure?: boolean
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          max_stay?: number | null
+          min_stay?: number | null
+          notes?: string | null
+          property_id?: string
+          room_type_id?: string
+          start_date?: string
+          stop_sell?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "availability_restrictions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "availability_restrictions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "availability_restrictions_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banquet_event_items: {
         Row: {
           covers: number
@@ -226,10 +296,12 @@ export type Database = {
         Row: {
           booking_number: string
           booking_type: string
+          channel_connection_id: string | null
           commission_percent: number | null
           company_id: string | null
           created_at: string
           created_by: string | null
+          external_booking_id: string | null
           guest_id: string
           id: string
           notes: string | null
@@ -239,10 +311,12 @@ export type Database = {
         Insert: {
           booking_number?: string
           booking_type?: string
+          channel_connection_id?: string | null
           commission_percent?: number | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
+          external_booking_id?: string | null
           guest_id: string
           id?: string
           notes?: string | null
@@ -252,10 +326,12 @@ export type Database = {
         Update: {
           booking_number?: string
           booking_type?: string
+          channel_connection_id?: string | null
           commission_percent?: number | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
+          external_booking_id?: string | null
           guest_id?: string
           id?: string
           notes?: string | null
@@ -263,6 +339,13 @@ export type Database = {
           travel_agent_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_channel_connection_id_fkey"
+            columns: ["channel_connection_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_company_id_fkey"
             columns: ["company_id"]
@@ -321,6 +404,192 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      channel_connections: {
+        Row: {
+          api_key: string | null
+          api_secret: string | null
+          channel_id: string
+          created_at: string
+          created_by: string | null
+          external_property_id: string | null
+          ical_export_token: string
+          ical_import_url: string | null
+          id: string
+          last_error: string | null
+          last_synced_at: string | null
+          property_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_secret?: string | null
+          channel_id: string
+          created_at?: string
+          created_by?: string | null
+          external_property_id?: string | null
+          ical_export_token?: string
+          ical_import_url?: string | null
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          property_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          api_secret?: string | null
+          channel_id?: string
+          created_at?: string
+          created_by?: string | null
+          external_property_id?: string | null
+          ical_export_token?: string
+          ical_import_url?: string | null
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          property_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_connections_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_connections_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_connections_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channel_rate_plan_map: {
+        Row: {
+          channel_connection_id: string
+          created_at: string
+          external_rate_plan_id: string
+          external_room_type_id: string | null
+          id: string
+          is_active: boolean
+          rate_plan_id: string
+        }
+        Insert: {
+          channel_connection_id: string
+          created_at?: string
+          external_rate_plan_id: string
+          external_room_type_id?: string | null
+          id?: string
+          is_active?: boolean
+          rate_plan_id: string
+        }
+        Update: {
+          channel_connection_id?: string
+          created_at?: string
+          external_rate_plan_id?: string
+          external_room_type_id?: string | null
+          id?: string
+          is_active?: boolean
+          rate_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_rate_plan_map_channel_connection_id_fkey"
+            columns: ["channel_connection_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_rate_plan_map_rate_plan_id_fkey"
+            columns: ["rate_plan_id"]
+            isOneToOne: false
+            referencedRelation: "rate_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channel_sync_log: {
+        Row: {
+          channel_connection_id: string
+          created_at: string
+          direction: string
+          error_message: string | null
+          id: string
+          payload_summary: string | null
+          retry_count: number
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          channel_connection_id: string
+          created_at?: string
+          direction: string
+          error_message?: string | null
+          id?: string
+          payload_summary?: string | null
+          retry_count?: number
+          status: string
+          sync_type: string
+        }
+        Update: {
+          channel_connection_id?: string
+          created_at?: string
+          direction?: string
+          error_message?: string | null
+          id?: string
+          payload_summary?: string | null
+          retry_count?: number
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_sync_log_channel_connection_id_fkey"
+            columns: ["channel_connection_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channels: {
+        Row: {
+          code: string
+          id: string
+          name: string
+          supports_api: boolean
+          supports_ical: boolean
+        }
+        Insert: {
+          code: string
+          id?: string
+          name: string
+          supports_api?: boolean
+          supports_ical?: boolean
+        }
+        Update: {
+          code?: string
+          id?: string
+          name?: string
+          supports_api?: boolean
+          supports_ical?: boolean
+        }
+        Relationships: []
       }
       chart_of_accounts: {
         Row: {
@@ -1958,6 +2227,51 @@ export type Database = {
           },
         ]
       }
+      rate_plans: {
+        Row: {
+          base_rate: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          property_id: string
+          room_type_id: string
+        }
+        Insert: {
+          base_rate?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          property_id: string
+          room_type_id: string
+        }
+        Update: {
+          base_rate?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          property_id?: string
+          room_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_plans_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_plans_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refunds: {
         Row: {
           amount: number
@@ -2016,6 +2330,7 @@ export type Database = {
           notes: string | null
           property_id: string
           rate_per_night: number
+          rate_plan_id: string | null
           reservation_number: string
           room_id: string | null
           room_type_id: string
@@ -2038,6 +2353,7 @@ export type Database = {
           notes?: string | null
           property_id: string
           rate_per_night?: number
+          rate_plan_id?: string | null
           reservation_number?: string
           room_id?: string | null
           room_type_id: string
@@ -2060,6 +2376,7 @@ export type Database = {
           notes?: string | null
           property_id?: string
           rate_per_night?: number
+          rate_plan_id?: string | null
           reservation_number?: string
           room_id?: string | null
           room_type_id?: string
@@ -2094,6 +2411,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_rate_plan_id_fkey"
+            columns: ["rate_plan_id"]
+            isOneToOne: false
+            referencedRelation: "rate_plans"
             referencedColumns: ["id"]
           },
           {
@@ -3038,6 +3362,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      available_room_count: {
+        Args: { p_date: string; p_room_type_id: string }
+        Returns: number
+      }
+      available_room_counts_for_range: {
+        Args: {
+          p_end_date: string
+          p_room_type_id: string
+          p_start_date: string
+        }
+        Returns: {
+          available_count: number
+          stay_date: string
+        }[]
+      }
       banquet_venue_conflicts: {
         Args: {
           p_end_at: string
@@ -3051,6 +3390,15 @@ export type Database = {
           id: string
           start_at: string
         }[]
+      }
+      check_availability: {
+        Args: {
+          p_check_in: string
+          p_check_out: string
+          p_exclude_reservation_id?: string
+          p_room_type_id: string
+        }
+        Returns: boolean
       }
       create_journal_entry: {
         Args: {
@@ -3067,6 +3415,13 @@ export type Database = {
       generate_invoice_from_reservation: {
         Args: { p_reservation_id: string; p_staff_id: string }
         Returns: string
+      }
+      get_busy_ranges_for_ical: {
+        Args: { p_room_type_id: string; p_token: string }
+        Returns: {
+          end_date: string
+          start_date: string
+        }[]
       }
       is_admin_staff: { Args: never; Returns: boolean }
       is_kitchen_network_staff: {
@@ -3116,6 +3471,41 @@ export type Database = {
       }
       seed_default_chart_of_accounts: {
         Args: { p_property_id: string }
+        Returns: undefined
+      }
+      webhook_cancel_reservation: {
+        Args: { p_connection_id: string; p_external_booking_id: string }
+        Returns: undefined
+      }
+      webhook_create_reservation: {
+        Args: {
+          p_adults: number
+          p_check_in: string
+          p_check_out: string
+          p_children: number
+          p_connection_id: string
+          p_external_booking_id: string
+          p_guest_email: string
+          p_guest_name: string
+          p_guest_phone: string
+          p_rate: number
+          p_room_type_id: string
+        }
+        Returns: string
+      }
+      webhook_modify_reservation: {
+        Args: {
+          p_adults: number
+          p_check_in: string
+          p_check_out: string
+          p_children: number
+          p_connection_id: string
+          p_external_booking_id: string
+        }
+        Returns: undefined
+      }
+      webhook_no_show_reservation: {
+        Args: { p_connection_id: string; p_external_booking_id: string }
         Returns: undefined
       }
     }
