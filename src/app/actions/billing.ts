@@ -74,6 +74,23 @@ export async function recordPayment(invoiceId: string, formData: FormData) {
   revalidatePath("/billing/invoices");
 }
 
+// The refunds table's own trigger (validate_refund_amount) rejects
+// refunding more than that payment's remaining balance, and
+// recompute_invoice_totals nets refunds out of amount_paid automatically —
+// this just needs to insert the row.
+export async function recordRefund(invoiceId: string, paymentId: string, formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("refunds").insert({
+    payment_id: paymentId,
+    amount: Number(formData.get("amount")),
+    reason: (formData.get("reason") as string) || null,
+    refunded_by: user.id,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/billing/invoices/${invoiceId}`);
+  revalidatePath("/billing/invoices");
+}
+
 export async function cancelInvoice(invoiceId: string) {
   const { supabase } = await requireUser();
   const { error } = await supabase.from("invoices").update({ status: "cancelled" }).eq("id", invoiceId);

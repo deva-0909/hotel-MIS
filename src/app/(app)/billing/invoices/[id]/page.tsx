@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
 import { formatDate } from "@/lib/format-datetime";
-import { addInvoiceLineItem, recordPayment, updateInvoiceAdjustments } from "@/app/actions/billing";
+import { addInvoiceLineItem, recordPayment, recordRefund, updateInvoiceAdjustments } from "@/app/actions/billing";
 import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { CancelInvoiceButton, PostInvoiceToLedgerButton, PostPaymentToLedgerButton } from "./invoice-actions";
@@ -15,6 +15,7 @@ const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red"> 
   partially_paid: "amber",
   paid: "green",
   cancelled: "red",
+  refunded: "red",
 };
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -25,7 +26,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
-      "id, invoice_number, status, subtotal, tax_amount, discount_amount, total_amount, amount_paid, notes, guests(full_name, phone)",
+      "id, invoice_number, status, subtotal, tax_amount, discount_amount, total_amount, amount_paid, refunded_amount, notes, guests(full_name, phone)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -34,7 +35,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const [{ data: lineItems }, { data: payments }] = await Promise.all([
     supabase.from("invoice_line_items").select("id, description, source_type, quantity, unit_price, amount").eq("invoice_id", id).order("created_at"),
-    supabase.from("payments").select("id, amount, method, reference_number, paid_at").eq("invoice_id", id).order("paid_at"),
+    supabase.from("payments").select("id, amount, method, reference_number, paid_at, refunds(amount)").eq("invoice_id", id).order("paid_at"),
   ]);
 
   const balanceDue = Number(invoice.total_amount) - Number(invoice.amount_paid);
@@ -149,6 +150,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 <span>Paid</span>
                 <span>{formatMoney(invoice.amount_paid, org.currency)}</span>
               </div>
+              {Number(invoice.refunded_amount) > 0 && (
+                <div className="flex justify-between text-red-600">
+                  <span>Refunded</span>
+                  <span>−{formatMoney(invoice.refunded_amount, org.currency)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-semibold text-gray-900">
                 <span>Balance due</span>
                 <span>{formatMoney(balanceDue, org.currency)}</span>
@@ -176,24 +183,47 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <EmptyState>No payments recorded.</EmptyState>
           ) : (
             <div className="divide-y divide-gray-50">
-              {payments.map((p) => (
-                <div key={p.id} className="flex items-center justify-between px-5 py-2.5 text-sm">
-                  <div>
-                    <div className="text-gray-800">{formatMoney(p.amount, org.currency)}</div>
-                    <div className="text-xs capitalize text-gray-400">
-                      {p.method.replace(/_/g, " ")} {p.reference_number ? `· ${p.reference_number}` : ""}
+              {payments.map((p) => {
+                const refunded = (p.refunds ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
+                const refundable = Number(p.amount) - refunded;
+                return (
+                  <div key={p.id} className="px-5 py-2.5 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-gray-800">{formatMoney(p.amount, org.currency)}</div>
+                        <div className="text-xs capitalize text-gray-400">
+                          {p.method.replace(/_/g, " ")} {p.reference_number ? `· ${p.reference_number}` : ""}
+                        </div>
+                        {refunded > 0 && <div className="text-xs text-red-500">Refunded {formatMoney(refunded, org.currency)}</div>}
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="text-xs text-gray-400">{formatDate(p.paid_at, org.timezone)}</div>
+                        {postedPaymentIds.has(p.id) ? (
+                          <span className="text-xs text-emerald-600">Posted</span>
+                        ) : (
+                          <PostPaymentToLedgerButton paymentId={p.id} invoiceId={invoice.id} />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="text-xs text-gray-400">{formatDate(p.paid_at, org.timezone)}</div>
-                    {postedPaymentIds.has(p.id) ? (
-                      <span className="text-xs text-emerald-600">Posted</span>
-                    ) : (
-                      <PostPaymentToLedgerButton paymentId={p.id} invoiceId={invoice.id} />
+                    {refundable > 0 && invoice.status !== "cancelled" && (
+                      <details className="mt-1.5">
+                        <summary className="cursor-pointer select-none text-xs text-red-500 hover:underline">Refund…</summary>
+                        <form action={recordRefund.bind(null, invoice.id, p.id)} className="mt-2 space-y-2 rounded-md bg-gray-50 p-2">
+                          <div>
+                            <Label>Amount (up to {formatMoney(refundable, org.currency)})</Label>
+                            <Input name="amount" type="number" min={0.01} max={refundable} step="0.01" defaultValue={refundable.toFixed(2)} required />
+                          </div>
+                          <div>
+                            <Label>Reason</Label>
+                            <Input name="reason" placeholder="e.g. cancellation fee waived" />
+                          </div>
+                          <SubmitButton variant="danger">Issue refund</SubmitButton>
+                        </form>
+                      </details>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           {balanceDue > 0 && invoice.status !== "cancelled" && (
