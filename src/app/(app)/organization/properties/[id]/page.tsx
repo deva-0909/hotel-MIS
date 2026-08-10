@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, Select, StatTile } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
-import { createBuilding, createFloor, createRestaurant, updatePropertySettings } from "@/app/actions/property";
+import { createBuilding, createFloor, createRestaurant, updatePropertySettings, updateWorkingHours } from "@/app/actions/property";
 import { CURRENCIES } from "@/lib/currencies";
 import { TIMEZONES } from "@/lib/timezones";
+import { DAYS, parseWorkingHours } from "@/lib/working-hours";
 import { RestaurantActiveToggle, PropertyActiveToggle } from "./property-actions";
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -15,11 +16,13 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
   const { data: property } = await supabase
     .from("properties")
-    .select("id, name, code, city, address, gstin, currency, timezone, is_active")
+    .select("id, name, code, city, address, gstin, currency, timezone, working_hours, is_active")
     .eq("id", id)
     .maybeSingle();
 
   if (!property) notFound();
+
+  const workingHours = parseWorkingHours(property.working_hours);
 
   const [{ data: buildings }, { data: restaurants }, { data: rooms }, { data: roomTypes }] = await Promise.all([
     supabase.from("buildings").select("id, name, floors(id, name, sort_order)").eq("property_id", id).order("name"),
@@ -146,6 +149,33 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               </Select>
             </div>
             <SubmitButton variant="secondary">Save</SubmitButton>
+          </form>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader title="Working hours" />
+          <p className="px-5 pt-3 text-xs text-gray-500">
+            Gates restaurant order creation — orders can&apos;t be started outside these hours. Defaults to open
+            24 hours every day, so nothing is restricted until you narrow it.
+          </p>
+          <form action={updateWorkingHours.bind(null, property.id)} className="space-y-2 px-5 py-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              {DAYS.map((day) => {
+                const h = workingHours[day];
+                return (
+                  <div key={day} className="flex items-center gap-3 rounded-md border border-gray-100 px-3 py-2">
+                    <span className="w-24 shrink-0 text-sm capitalize text-gray-700">{day}</span>
+                    <Input name={`${day}_open`} type="time" defaultValue={h.open} className="w-28" />
+                    <span className="text-xs text-gray-400">to</span>
+                    <Input name={`${day}_close`} type="time" defaultValue={h.close} className="w-28" />
+                    <label className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
+                      <input type="checkbox" name={`${day}_closed`} defaultChecked={h.closed} /> Closed
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+            <SubmitButton variant="secondary">Save working hours</SubmitButton>
           </form>
         </Card>
       </div>

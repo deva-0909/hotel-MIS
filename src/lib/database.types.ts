@@ -1497,6 +1497,7 @@ export type Database = {
           name: string
           timezone: string
           updated_at: string
+          working_hours: Json
         }
         Insert: {
           address?: string | null
@@ -1510,6 +1511,7 @@ export type Database = {
           name: string
           timezone?: string
           updated_at?: string
+          working_hours?: Json
         }
         Update: {
           address?: string | null
@@ -1523,6 +1525,7 @@ export type Database = {
           name?: string
           timezone?: string
           updated_at?: string
+          working_hours?: Json
         }
         Relationships: []
       }

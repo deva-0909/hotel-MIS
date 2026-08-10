@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { DAYS } from "@/lib/working-hours";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -53,6 +54,23 @@ export async function updatePropertySettings(propertyId: string, formData: FormD
       timezone: String(formData.get("timezone")),
     })
     .eq("id", propertyId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/organization/properties/${propertyId}`);
+}
+
+export async function updateWorkingHours(propertyId: string, formData: FormData) {
+  const { supabase } = await requireUser();
+  const workingHours = Object.fromEntries(
+    DAYS.map((day) => [
+      day,
+      {
+        open: String(formData.get(`${day}_open`) || "00:00"),
+        close: String(formData.get(`${day}_close`) || "23:59"),
+        closed: formData.get(`${day}_closed`) === "on",
+      },
+    ]),
+  );
+  const { error } = await supabase.from("properties").update({ working_hours: workingHours }).eq("id", propertyId);
   if (error) throw new Error(error.message);
   revalidatePath(`/organization/properties/${propertyId}`);
 }

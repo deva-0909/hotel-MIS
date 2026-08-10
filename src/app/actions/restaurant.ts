@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/require-user";
+import { parseWorkingHours, isWithinWorkingHours } from "@/lib/working-hours";
 
 export async function createTable(formData: FormData) {
   const { supabase } = await requireUser();
@@ -66,6 +67,15 @@ export async function createOrder(formData: FormData) {
   const tableId = (formData.get("table_id") as string) || null;
   const reservationId = (formData.get("reservation_id") as string) || null;
   const billToRoom = formData.get("bill_to_room") === "on" && !!reservationId;
+
+  const { data: property } = await supabase
+    .from("properties")
+    .select("working_hours, timezone")
+    .eq("id", propertyId)
+    .single();
+  if (property && !isWithinWorkingHours(parseWorkingHours(property.working_hours), property.timezone)) {
+    throw new Error("This restaurant is currently closed. Check Property Settings for its working hours.");
+  }
 
   const { data, error } = await supabase
     .from("orders")
