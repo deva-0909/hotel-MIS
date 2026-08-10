@@ -13,9 +13,13 @@ export async function createInventoryCategory(formData: FormData) {
 
 // inventory_items is a shared, enterprise-wide catalog — stock levels live
 // per-property in property_inventory instead. Creating an item also seeds
-// this property's starting stock row for it.
+// this property's starting stock row for it, and (if there's an opening
+// balance) a matching store_inventory row in the default store so the
+// per-store breakdown stays consistent with the property-wide total.
 export async function createInventoryItem(formData: FormData) {
   const { supabase, propertyId } = await requireUser();
+  const openingStock = Number(formData.get("current_stock") ?? 0);
+
   const { data: item, error } = await supabase
     .from("inventory_items")
     .insert({
@@ -31,10 +35,26 @@ export async function createInventoryItem(formData: FormData) {
   const { error: stockError } = await supabase.from("property_inventory").insert({
     property_id: propertyId,
     inventory_item_id: item.id,
-    current_stock: Number(formData.get("current_stock") ?? 0),
+    current_stock: openingStock,
     reorder_level: Number(formData.get("reorder_level") ?? 0),
   });
   if (stockError) throw new Error(stockError.message);
+
+  if (openingStock > 0) {
+    const { data: defaultStore } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("property_id", propertyId)
+      .eq("is_default", true)
+      .maybeSingle();
+    if (defaultStore) {
+      await supabase.from("store_inventory").insert({
+        store_id: defaultStore.id,
+        inventory_item_id: item.id,
+        current_stock: openingStock,
+      });
+    }
+  }
 
   revalidatePath("/inventory/items");
 }
@@ -44,12 +64,14 @@ export async function recordStockMovement(formData: FormData) {
   const movementType = String(formData.get("movement_type")) as "adjustment" | "consumption" | "wastage";
   const rawQty = Number(formData.get("quantity"));
   const quantity = movementType === "adjustment" ? rawQty : Math.abs(rawQty);
+  const storeId = (formData.get("store_id") as string) || null;
 
   const { error } = await supabase.from("stock_movements").insert({
     property_id: propertyId,
     inventory_item_id: String(formData.get("inventory_item_id")),
     movement_type: movementType,
     quantity,
+    store_id: storeId,
     notes: (formData.get("notes") as string) || null,
     created_by: user.id,
   });

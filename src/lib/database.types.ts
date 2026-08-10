@@ -299,6 +299,57 @@ export type Database = {
           },
         ]
       }
+      config_audit_log: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          property_id: string | null
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          property_id?: string | null
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          property_id?: string | null
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "config_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "config_audit_log_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corporate_banquet_package_templates: {
         Row: {
           created_at: string
@@ -1394,6 +1445,7 @@ export type Database = {
           notes: string | null
           order_number: string
           order_type: Database["public"]["Enums"]["order_type"]
+          pos_terminal_id: string | null
           property_id: string
           reservation_id: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -1409,6 +1461,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
+          pos_terminal_id?: string | null
           property_id: string
           reservation_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -1424,6 +1477,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
+          pos_terminal_id?: string | null
           property_id?: string
           reservation_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -1437,6 +1491,13 @@ export type Database = {
             columns: ["guest_id"]
             isOneToOne: false
             referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_pos_terminal_id_fkey"
+            columns: ["pos_terminal_id"]
+            isOneToOne: false
+            referencedRelation: "pos_terminals"
             referencedColumns: ["id"]
           },
           {
@@ -1510,6 +1571,51 @@ export type Database = {
             columns: ["received_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_terminals: {
+        Row: {
+          created_at: string
+          id: string
+          identifier: string | null
+          is_active: boolean
+          name: string
+          property_id: string
+          restaurant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          is_active?: boolean
+          name: string
+          property_id: string
+          restaurant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          is_active?: boolean
+          name?: string
+          property_id?: string
+          restaurant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_terminals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_terminals_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
@@ -2159,6 +2265,54 @@ export type Database = {
           },
         ]
       }
+      staff_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          id: string
+          invited_by: string | null
+          property_id: string | null
+          role: Database["public"]["Enums"]["staff_role"]
+          status: Database["public"]["Enums"]["invite_status"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          invited_by?: string | null
+          property_id?: string | null
+          role: Database["public"]["Enums"]["staff_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string | null
+          property_id?: string | null
+          role?: Database["public"]["Enums"]["staff_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_invites_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -2171,6 +2325,7 @@ export type Database = {
           quantity: number
           reference_id: string | null
           reference_table: string | null
+          store_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2183,6 +2338,7 @@ export type Database = {
           quantity: number
           reference_id?: string | null
           reference_table?: string | null
+          store_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2195,6 +2351,7 @@ export type Database = {
           quantity?: number
           reference_id?: string | null
           reference_table?: string | null
+          store_id?: string | null
         }
         Relationships: [
           {
@@ -2216,6 +2373,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -2308,6 +2472,74 @@ export type Database = {
           {
             foreignKeyName: "stock_transfers_to_property_id_fkey"
             columns: ["to_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_inventory: {
+        Row: {
+          current_stock: number
+          inventory_item_id: string
+          store_id: string
+        }
+        Insert: {
+          current_stock?: number
+          inventory_item_id: string
+          store_id: string
+        }
+        Update: {
+          current_stock?: number
+          inventory_item_id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_inventory_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_inventory_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stores_property_id_fkey"
+            columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
@@ -2605,6 +2837,14 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: undefined
       }
+      resolve_signup: {
+        Args: { p_email: string }
+        Returns: {
+          allowed: boolean
+          property_id: string
+          role: Database["public"]["Enums"]["staff_role"]
+        }[]
+      }
       seed_default_chart_of_accounts: {
         Args: { p_property_id: string }
         Returns: undefined
@@ -2613,6 +2853,7 @@ export type Database = {
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
       device_type: "printer" | "kds"
+      invite_status: "pending" | "accepted" | "revoked"
       invoice_status:
         | "draft"
         | "issued"
@@ -2810,6 +3051,7 @@ export const Constants = {
     Enums: {
       account_type: ["asset", "liability", "equity", "revenue", "expense"],
       device_type: ["printer", "kds"],
+      invite_status: ["pending", "accepted", "revoked"],
       invoice_status: [
         "draft",
         "issued",

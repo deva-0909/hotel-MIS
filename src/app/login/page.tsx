@@ -3,18 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, signUp } from "./actions";
-import { Button, Input, Label, Select } from "@/components/ui";
-
-const ROLES = [
-  ["admin", "Admin"],
-  ["front_office", "Front Office"],
-  ["restaurant_manager", "Restaurant Manager"],
-  ["waiter", "Waiter"],
-  ["chef", "Chef"],
-  ["housekeeping", "Housekeeping"],
-  ["inventory_manager", "Inventory Manager"],
-  ["accountant", "Accountant"],
-] as const;
+import { Button, Input, Label } from "@/components/ui";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -66,19 +55,10 @@ export default function LoginPage() {
             <Input name="password" type="password" required minLength={6} placeholder="••••••••" />
           </div>
           {mode === "register" && (
-            <div>
-              <Label>Role</Label>
-              <Select name="role" defaultValue="admin">
-                {ROLES.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-              <p className="mt-1 text-xs text-gray-400">
-                First account should register as Admin, then promote/manage others from Staff.
-              </p>
-            </div>
+            <p className="rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-700">
+              Your role and property are set from an admin&apos;s invite (matched by this email). If this is a
+              brand-new system with no accounts yet, registering here creates the first admin account.
+            </p>
           )}
 
           {error && <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}

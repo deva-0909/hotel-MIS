@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { toggleStaffActive, updateStaffRole, updateStaffProperty } from "@/app/actions/staff";
+import { revokeInvite } from "@/app/actions/invites";
 import { Select } from "@/components/ui";
 import type { Database } from "@/lib/database.types";
 
@@ -16,6 +17,23 @@ const ROLES: StaffRole[] = [
   "housekeeping",
   "inventory_manager",
   "accountant",
+];
+
+export const ALL_ROLES: StaffRole[] = [
+  "admin",
+  "front_office",
+  "housekeeping",
+  "restaurant_manager",
+  "waiter",
+  "chef",
+  "inventory_manager",
+  "engineering",
+  "hr",
+  "accountant",
+  "crm_marketing",
+  "banquet",
+  "spa_laundry",
+  "travel_desk",
 ];
 
 export function RoleSelect({ staffId, role }: { staffId: string; role: StaffRole }) {
@@ -76,6 +94,19 @@ export function ActiveToggle({ staffId, active }: { staffId: string; active: boo
       }`}
     >
       {active ? "Active" : "Inactive"}
+    </button>
+  );
+}
+
+export function RevokeInviteButton({ inviteId }: { inviteId: string }) {
+  const [pending, startTransition] = useTransition();
+  return (
+    <button
+      disabled={pending}
+      onClick={() => startTransition(() => revokeInvite(inviteId))}
+      className="text-xs text-gray-400 hover:text-red-600"
+    >
+      Revoke
     </button>
   );
 }

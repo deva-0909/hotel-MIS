@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { createInventoryCategory, createInventoryItem, recordStockMovement } from "@/app/actions/inventory";
@@ -5,34 +6,89 @@ import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/com
 import { SubmitButton } from "@/components/submit-button";
 import { formatMoney } from "@/lib/format-money";
 
-export default async function InventoryItemsPage() {
+export default async function InventoryItemsPage({ searchParams }: { searchParams: Promise<{ store?: string }> }) {
+  const { store: storeFilter } = await searchParams;
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const [{ data: categories }, { data: rawItems }] = await Promise.all([
+  const [{ data: categories }, { data: stores }] = await Promise.all([
     supabase.from("inventory_categories").select("id, name").order("name"),
-    supabase
+    supabase.from("stores").select("id, name, is_default").eq("property_id", org.propertyId).order("name"),
+  ]);
+
+  let items: {
+    id: string;
+    name: string;
+    unit: string;
+    unit_cost: number;
+    category_name: string | null;
+    current_stock: number;
+    reorder_level: number;
+  }[];
+
+  if (storeFilter) {
+    const { data: rawItems } = await supabase
+      .from("inventory_items")
+      .select("id, name, unit, unit_cost, inventory_categories(name), store_inventory!inner(current_stock, store_id)")
+      .eq("store_inventory.store_id", storeFilter)
+      .order("name");
+    items = (rawItems ?? []).map((i) => ({
+      id: i.id,
+      name: i.name,
+      unit: i.unit,
+      unit_cost: i.unit_cost,
+      category_name: i.inventory_categories?.name ?? null,
+      current_stock: i.store_inventory[0]?.current_stock ?? 0,
+      reorder_level: 0,
+    }));
+  } else {
+    // Catalog is shared across properties; stock is per-property (property_inventory
+    // has at most one matching row, or none if this property has never stocked it).
+    const { data: rawItems } = await supabase
       .from("inventory_items")
       .select("id, name, unit, unit_cost, inventory_categories(name), property_inventory(current_stock, reorder_level)")
       .eq("property_inventory.property_id", org.propertyId)
-      .order("name"),
-  ]);
-
-  // Catalog is shared across properties; stock is per-property (property_inventory
-  // has at most one matching row, or none if this property has never stocked it).
-  const items = (rawItems ?? []).map((i) => ({
-    ...i,
-    current_stock: i.property_inventory[0]?.current_stock ?? 0,
-    reorder_level: i.property_inventory[0]?.reorder_level ?? 0,
-  }));
+      .order("name");
+    items = (rawItems ?? []).map((i) => ({
+      id: i.id,
+      name: i.name,
+      unit: i.unit,
+      unit_cost: i.unit_cost,
+      category_name: i.inventory_categories?.name ?? null,
+      current_stock: i.property_inventory[0]?.current_stock ?? 0,
+      reorder_level: i.property_inventory[0]?.reorder_level ?? 0,
+    }));
+  }
 
   const lowStock = items.filter((i) => Number(i.current_stock) <= Number(i.reorder_level));
+  const activeStoreName = storeFilter ? stores?.find((s) => s.id === storeFilter)?.name : null;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-900">Stock items</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-gray-900">Stock items</h1>
+        {(stores?.length ?? 0) > 1 && (
+          <div className="flex items-center gap-1.5 text-xs">
+            <Link
+              href="/inventory/items"
+              className={`rounded-full px-2.5 py-1 ${!storeFilter ? "bg-accent-soft text-accent" : "text-gray-500 hover:bg-gray-100"}`}
+            >
+              All stores
+            </Link>
+            {stores?.map((s) => (
+              <Link
+                key={s.id}
+                href={`/inventory/items?store=${s.id}`}
+                className={`rounded-full px-2.5 py-1 ${storeFilter === s.id ? "bg-accent-soft text-accent" : "text-gray-500 hover:bg-gray-100"}`}
+              >
+                {s.name}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {lowStock.length > 0 && (
+      {!storeFilter && lowStock.length > 0 && (
         <Card className="border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
           {lowStock.length} item{lowStock.length === 1 ? "" : "s"} at or below reorder level: {lowStock.map((i) => i.name).join(", ")}
         </Card>
@@ -40,7 +96,7 @@ export default async function InventoryItemsPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title={`All items (${items.length})`} />
+          <CardHeader title={`${activeStoreName ? `${activeStoreName} — ` : ""}Items (${items.length})`} />
           {!items.length ? (
             <EmptyState>No stock items yet.</EmptyState>
           ) : (
@@ -50,17 +106,17 @@ export default async function InventoryItemsPage() {
                   <th className="px-5 py-2 font-medium">Item</th>
                   <th className="px-5 py-2 font-medium">Category</th>
                   <th className="px-5 py-2 font-medium">Stock</th>
-                  <th className="px-5 py-2 font-medium">Reorder</th>
+                  {!storeFilter && <th className="px-5 py-2 font-medium">Reorder</th>}
                   <th className="px-5 py-2 font-medium">Unit cost</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => {
-                  const low = Number(item.current_stock) <= Number(item.reorder_level);
+                  const low = !storeFilter && Number(item.current_stock) <= Number(item.reorder_level);
                   return (
                     <tr key={item.id} className="border-b border-gray-50 last:border-0">
                       <td className="px-5 py-2.5 font-medium text-gray-900">{item.name}</td>
-                      <td className="px-5 py-2.5 text-gray-600">{item.inventory_categories?.name ?? "—"}</td>
+                      <td className="px-5 py-2.5 text-gray-600">{item.category_name ?? "—"}</td>
                       <td className="px-5 py-2.5">
                         {low ? (
                           <Badge color="amber">
@@ -72,9 +128,11 @@ export default async function InventoryItemsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-2.5 text-gray-500">
-                        {item.reorder_level} {item.unit}
-                      </td>
+                      {!storeFilter && (
+                        <td className="px-5 py-2.5 text-gray-500">
+                          {item.reorder_level} {item.unit}
+                        </td>
+                      )}
                       <td className="px-5 py-2.5 text-gray-600">{formatMoney(item.unit_cost, org.currency)}</td>
                     </tr>
                   );
@@ -99,6 +157,18 @@ export default async function InventoryItemsPage() {
                   ))}
                 </Select>
               </div>
+              {(stores?.length ?? 0) > 1 && (
+                <div>
+                  <Label>Store</Label>
+                  <Select name="store_id" defaultValue={stores?.find((s) => s.is_default)?.id ?? ""}>
+                    {stores?.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
               <div>
                 <Label>Type</Label>
                 <Select name="movement_type" defaultValue="adjustment">
