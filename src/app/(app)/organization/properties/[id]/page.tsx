@@ -3,10 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { Card, CardHeader, Badge, Breadcrumb, EmptyState, Input, Label, Select, StatTile } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
-import { createBuilding, createFloor, createRestaurant, updatePropertySettings, updateWorkingHours } from "@/app/actions/property";
+import { createBuilding, createFloor, createRestaurant, updatePropertySettings, updateWorkingHours, updateBookingPolicy } from "@/app/actions/property";
 import { CURRENCIES } from "@/lib/currencies";
 import { TIMEZONES } from "@/lib/timezones";
 import { DAYS, parseWorkingHours } from "@/lib/working-hours";
+import { parseBookingPolicy } from "@/lib/booking-policy";
 import { RestaurantActiveToggle, PropertyActiveToggle } from "./property-actions";
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,13 +17,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
   const { data: property } = await supabase
     .from("properties")
-    .select("id, name, code, city, address, gstin, currency, timezone, working_hours, is_active")
+    .select("id, name, code, city, address, gstin, currency, timezone, working_hours, booking_policy, is_active")
     .eq("id", id)
     .maybeSingle();
 
   if (!property) notFound();
 
   const workingHours = parseWorkingHours(property.working_hours);
+  const bookingPolicy = parseBookingPolicy(property.booking_policy);
 
   const [{ data: buildings }, { data: restaurants }, { data: rooms }, { data: roomTypes }] = await Promise.all([
     supabase.from("buildings").select("id, name, floors(id, name, sort_order)").eq("property_id", id).order("name"),
@@ -176,6 +178,47 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               })}
             </div>
             <SubmitButton variant="secondary">Save working hours</SubmitButton>
+          </form>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader title="Booking policy" />
+          <p className="px-5 pt-3 text-xs text-gray-500">
+            Applied automatically to every reservation at this property. Zero fees and no deposit (the defaults)
+            match exactly what happens today — nothing changes until you set real values.
+          </p>
+          <form action={updateBookingPolicy.bind(null, property.id)} className="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2">
+            <div>
+              <Label>Free cancellation window (hours before check-in)</Label>
+              <Input name="cancellation_free_hours" type="number" min={0} defaultValue={bookingPolicy.cancellation_free_hours} />
+            </div>
+            <div>
+              <Label>Cancellation fee (% of one night, inside the window)</Label>
+              <Input name="cancellation_fee_percent" type="number" min={0} max={100} step="0.01" defaultValue={bookingPolicy.cancellation_fee_percent} />
+            </div>
+            <div>
+              <Label>No-show fee (% of one night)</Label>
+              <Input name="no_show_fee_percent" type="number" min={0} max={100} step="0.01" defaultValue={bookingPolicy.no_show_fee_percent} />
+            </div>
+            <div>
+              <Label>Deposit</Label>
+              <Select name="deposit_type" defaultValue={bookingPolicy.deposit_type}>
+                <option value="none">None</option>
+                <option value="percent">% of total stay</option>
+                <option value="fixed">Fixed amount</option>
+              </Select>
+            </div>
+            <div>
+              <Label>Deposit % (if percent)</Label>
+              <Input name="deposit_percent" type="number" min={0} max={100} step="0.01" defaultValue={bookingPolicy.deposit_percent} />
+            </div>
+            <div>
+              <Label>Deposit amount (if fixed)</Label>
+              <Input name="deposit_amount" type="number" min={0} step="0.01" defaultValue={bookingPolicy.deposit_amount} />
+            </div>
+            <div className="sm:col-span-2">
+              <SubmitButton variant="secondary">Save booking policy</SubmitButton>
+            </div>
           </form>
         </Card>
       </div>

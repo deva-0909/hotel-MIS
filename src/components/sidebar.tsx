@@ -39,6 +39,8 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { code: "DV", href: "/organization/devices", label: "Devices", roles: ["admin"] },
       { code: "SR", href: "/organization/stores", label: "Stores", roles: ["admin"] },
       { code: "PT", href: "/organization/pos-terminals", label: "POS Terminals", roles: ["admin"] },
+      { code: "CA", href: "/organization/companies", label: "Companies", roles: ["admin", "front_office"] },
+      { code: "TA", href: "/organization/travel-agents", label: "Travel Agents", roles: ["admin", "front_office"] },
       { code: "CT", href: "/organization/templates", label: "Corporate Templates", roles: ["admin"] },
       { code: "AL", href: "/organization/audit-log", label: "Audit Log", roles: ["admin"] },
       { code: "PR", href: "/", label: "Property Dashboard" },

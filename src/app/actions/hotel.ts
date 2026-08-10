@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/require-user";
+import { cancelReservationWithPolicy, markNoShowWithPolicy } from "@/lib/reservation-ops";
 import type { Database } from "@/lib/database.types";
 
 type RoomStatus = Database["public"]["Enums"]["room_status"];
@@ -54,65 +55,11 @@ export async function createGuest(formData: FormData) {
     id_proof_type: (formData.get("id_proof_type") as string) || null,
     id_proof_number: (formData.get("id_proof_number") as string) || null,
     address: (formData.get("address") as string) || null,
+    preferences: (formData.get("preferences") as string) || null,
     created_by: user.id,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/guests");
-}
-
-export async function createReservation(formData: FormData) {
-  const { supabase, user, propertyId } = await requireUser();
-
-  let guestId = formData.get("guest_id") as string | null;
-  if (!guestId) {
-    const newName = formData.get("new_guest_name") as string | null;
-    if (!newName) throw new Error("Select a guest or enter a new guest name");
-    const { data, error } = await supabase
-      .from("guests")
-      .insert({
-        full_name: newName,
-        phone: (formData.get("new_guest_phone") as string) || null,
-        email: (formData.get("new_guest_email") as string) || null,
-        created_by: user.id,
-      })
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    guestId = data.id;
-  }
-
-  const roomId = (formData.get("room_id") as string) || null;
-
-  if (roomId) {
-    const { data: room, error: roomError } = await supabase
-      .from("rooms")
-      .select("status")
-      .eq("id", roomId)
-      .eq("property_id", propertyId)
-      .maybeSingle();
-    if (roomError) throw new Error(roomError.message);
-    if (!room || !["available", "dirty"].includes(room.status)) {
-      throw new Error("This room is no longer available. Pick a different room.");
-    }
-  }
-
-  const { error } = await supabase.from("reservations").insert({
-    property_id: propertyId,
-    guest_id: guestId,
-    room_id: roomId,
-    room_type_id: String(formData.get("room_type_id")),
-    check_in_date: String(formData.get("check_in_date")),
-    check_out_date: String(formData.get("check_out_date")),
-    adults: Number(formData.get("adults") ?? 1),
-    children: Number(formData.get("children") ?? 0),
-    rate_per_night: Number(formData.get("rate_per_night") ?? 0),
-    notes: (formData.get("notes") as string) || null,
-    created_by: user.id,
-  });
-  if (error) throw new Error(error.message);
-  revalidatePath("/reservations");
-  revalidatePath("/rooms");
-  redirect("/reservations");
 }
 
 export async function assignRoom(reservationId: string, roomId: string) {
@@ -169,9 +116,16 @@ export async function checkOutReservation(reservationId: string) {
 }
 
 export async function cancelReservation(reservationId: string) {
-  const { supabase } = await requireUser();
-  const { error } = await supabase.from("reservations").update({ status: "cancelled" }).eq("id", reservationId);
-  if (error) throw new Error(error.message);
+  const { supabase, user } = await requireUser();
+  await cancelReservationWithPolicy(supabase, reservationId, user.id);
+  revalidatePath(`/reservations/${reservationId}`);
+  revalidatePath("/reservations");
+  revalidatePath("/rooms");
+}
+
+export async function markNoShow(reservationId: string) {
+  const { supabase, user } = await requireUser();
+  await markNoShowWithPolicy(supabase, reservationId, user.id);
   revalidatePath(`/reservations/${reservationId}`);
   revalidatePath("/reservations");
   revalidatePath("/rooms");

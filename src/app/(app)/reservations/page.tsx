@@ -29,7 +29,7 @@ export default async function ReservationsPage({
   let query = supabase
     .from("reservations")
     .select(
-      "id, reservation_number, check_in_date, check_out_date, status, rate_per_night, guests(full_name), rooms(room_number)",
+      "id, reservation_number, check_in_date, check_out_date, status, rate_per_night, special_requests, guests(full_name), rooms(room_number)",
     )
     .eq("property_id", org.propertyId)
     .order("created_at", { ascending: false })
@@ -87,6 +87,11 @@ export default async function ReservationsPage({
                     <Link href={`/reservations/${r.id}`} className="font-medium text-slate-900 hover:underline">
                       {r.reservation_number}
                     </Link>
+                    {r.special_requests && (
+                      <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700" title={r.special_requests}>
+                        request
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-2.5 text-gray-700">{r.guests?.full_name}</td>
                   <td className="px-5 py-2.5 text-gray-600">{r.rooms?.room_number ?? "Unassigned"}</td>

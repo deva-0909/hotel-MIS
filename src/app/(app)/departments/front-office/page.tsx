@@ -77,10 +77,12 @@ export default async function FrontOfficeDepartmentPage() {
         <Card>
           <CardHeader title="Quick actions" />
           <div className="flex flex-col gap-2 p-4">
-            <Link href="/reservations/new"><Button variant="secondary" className="w-full">New Reservation</Button></Link>
+            <Link href="/reservations/new"><Button variant="secondary" className="w-full">New Booking</Button></Link>
+            <Link href="/bookings"><Button variant="secondary" className="w-full">All Bookings</Button></Link>
             <Link href="/reservations"><Button variant="secondary" className="w-full">Check-In Guest</Button></Link>
             <Link href="/rooms"><Button variant="secondary" className="w-full">Room Status Board</Button></Link>
             <Link href="/guests"><Button variant="secondary" className="w-full">Guest Directory</Button></Link>
+            <Link href="/waitlist"><Button variant="secondary" className="w-full">Waitlist</Button></Link>
           </div>
         </Card>
       </div>

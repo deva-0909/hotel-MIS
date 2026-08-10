@@ -222,6 +222,77 @@ export type Database = {
           },
         ]
       }
+      bookings: {
+        Row: {
+          booking_number: string
+          booking_type: string
+          commission_percent: number | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          guest_id: string
+          id: string
+          notes: string | null
+          source: Database["public"]["Enums"]["booking_source"]
+          travel_agent_id: string | null
+        }
+        Insert: {
+          booking_number?: string
+          booking_type?: string
+          commission_percent?: number | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          guest_id: string
+          id?: string
+          notes?: string | null
+          source?: Database["public"]["Enums"]["booking_source"]
+          travel_agent_id?: string | null
+        }
+        Update: {
+          booking_number?: string
+          booking_type?: string
+          commission_percent?: number | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          guest_id?: string
+          id?: string
+          notes?: string | null
+          source?: Database["public"]["Enums"]["booking_source"]
+          travel_agent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_travel_agent_id_fkey"
+            columns: ["travel_agent_id"]
+            isOneToOne: false
+            referencedRelation: "travel_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buildings: {
         Row: {
           created_at: string
@@ -298,6 +369,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      companies: {
+        Row: {
+          billing_address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          gstin: string | null
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          billing_address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          billing_address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
       }
       config_audit_log: {
         Row: {
@@ -713,6 +817,7 @@ export type Database = {
           loyalty_tier: string | null
           notes: string | null
           phone: string | null
+          preferences: string | null
           updated_at: string
         }
         Insert: {
@@ -728,6 +833,7 @@ export type Database = {
           loyalty_tier?: string | null
           notes?: string | null
           phone?: string | null
+          preferences?: string | null
           updated_at?: string
         }
         Update: {
@@ -743,6 +849,7 @@ export type Database = {
           loyalty_tier?: string | null
           notes?: string | null
           phone?: string | null
+          preferences?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -972,6 +1079,7 @@ export type Database = {
           notes: string | null
           order_id: string | null
           property_id: string
+          refunded_amount: number
           reservation_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
@@ -991,6 +1099,7 @@ export type Database = {
           notes?: string | null
           order_id?: string | null
           property_id: string
+          refunded_amount?: number
           reservation_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
@@ -1010,6 +1119,7 @@ export type Database = {
           notes?: string | null
           order_id?: string | null
           property_id?: string
+          refunded_amount?: number
           reservation_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
@@ -1661,6 +1771,7 @@ export type Database = {
       properties: {
         Row: {
           address: string | null
+          booking_policy: Json
           city: string | null
           code: string
           created_at: string
@@ -1675,6 +1786,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          booking_policy?: Json
           city?: string | null
           code: string
           created_at?: string
@@ -1689,6 +1801,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          booking_policy?: Json
           city?: string | null
           code?: string
           created_at?: string
@@ -1845,11 +1958,54 @@ export type Database = {
           },
         ]
       }
+      refunds: {
+        Row: {
+          amount: number
+          id: string
+          payment_id: string
+          reason: string | null
+          refunded_at: string
+          refunded_by: string | null
+        }
+        Insert: {
+          amount: number
+          id?: string
+          payment_id: string
+          reason?: string | null
+          refunded_at?: string
+          refunded_by?: string | null
+        }
+        Update: {
+          amount?: number
+          id?: string
+          payment_id?: string
+          reason?: string | null
+          refunded_at?: string
+          refunded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_refunded_by_fkey"
+            columns: ["refunded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           actual_check_in_at: string | null
           actual_check_out_at: string | null
           adults: number
+          booking_id: string | null
           check_in_date: string
           check_out_date: string
           children: number
@@ -1863,6 +2019,7 @@ export type Database = {
           reservation_number: string
           room_id: string | null
           room_type_id: string
+          special_requests: string | null
           status: Database["public"]["Enums"]["reservation_status"]
           updated_at: string
         }
@@ -1870,6 +2027,7 @@ export type Database = {
           actual_check_in_at?: string | null
           actual_check_out_at?: string | null
           adults?: number
+          booking_id?: string | null
           check_in_date: string
           check_out_date: string
           children?: number
@@ -1883,6 +2041,7 @@ export type Database = {
           reservation_number?: string
           room_id?: string | null
           room_type_id: string
+          special_requests?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
           updated_at?: string
         }
@@ -1890,6 +2049,7 @@ export type Database = {
           actual_check_in_at?: string | null
           actual_check_out_at?: string | null
           adults?: number
+          booking_id?: string | null
           check_in_date?: string
           check_out_date?: string
           children?: number
@@ -1903,10 +2063,18 @@ export type Database = {
           reservation_number?: string
           room_id?: string | null
           room_type_id?: string
+          special_requests?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reservations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reservations_created_by_fkey"
             columns: ["created_by"]
@@ -2614,6 +2782,36 @@ export type Database = {
           },
         ]
       }
+      travel_agents: {
+        Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          default_commission_percent: number
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          default_commission_percent?: number
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          default_commission_percent?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       travel_bookings: {
         Row: {
           created_at: string
@@ -2703,6 +2901,77 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waitlist_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          guest_id: string
+          id: string
+          notes: string | null
+          party_size: number
+          property_id: string
+          requested_check_in: string
+          requested_check_out: string
+          room_type_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          guest_id: string
+          id?: string
+          notes?: string | null
+          party_size?: number
+          property_id: string
+          requested_check_in: string
+          requested_check_out: string
+          room_type_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          guest_id?: string
+          id?: string
+          notes?: string | null
+          party_size?: number
+          property_id?: string
+          requested_check_in?: string
+          requested_check_out?: string
+          room_type_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_entries_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_entries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_entries_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
             referencedColumns: ["id"]
           },
         ]
@@ -2852,6 +3121,14 @@ export type Database = {
     }
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
+      booking_source:
+        | "direct"
+        | "phone"
+        | "walk_in"
+        | "ota"
+        | "travel_agent"
+        | "corporate"
+        | "other"
       device_type: "printer" | "kds"
       invite_status: "pending" | "accepted" | "revoked"
       invoice_status:
@@ -2860,6 +3137,7 @@ export type Database = {
         | "partially_paid"
         | "paid"
         | "cancelled"
+        | "refunded"
       order_item_status:
         | "pending"
         | "preparing"
@@ -3050,6 +3328,15 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["asset", "liability", "equity", "revenue", "expense"],
+      booking_source: [
+        "direct",
+        "phone",
+        "walk_in",
+        "ota",
+        "travel_agent",
+        "corporate",
+        "other",
+      ],
       device_type: ["printer", "kds"],
       invite_status: ["pending", "accepted", "revoked"],
       invoice_status: [
@@ -3058,6 +3345,7 @@ export const Constants = {
         "partially_paid",
         "paid",
         "cancelled",
+        "refunded",
       ],
       order_item_status: [
         "pending",

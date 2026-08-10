@@ -25,7 +25,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   const { data: reservation } = await supabase
     .from("reservations")
     .select(
-      "id, reservation_number, check_in_date, check_out_date, actual_check_in_at, actual_check_out_at, adults, children, rate_per_night, status, notes, guest_id, room_id, room_type_id, guests(id, full_name, phone, email), rooms(id, room_number), room_types(name)",
+      "id, reservation_number, check_in_date, check_out_date, actual_check_in_at, actual_check_out_at, adults, children, rate_per_night, status, notes, special_requests, guest_id, room_id, room_type_id, booking_id, guests(id, full_name, phone, email, preferences), rooms(id, room_number), room_types(name), bookings(booking_number)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -56,6 +56,14 @@ export default async function ReservationDetailPage({ params }: { params: Promis
           </div>
           <p className="mt-1 text-sm text-gray-500">
             {reservation.guests?.full_name} · {reservation.room_types?.name} · {reservation.check_in_date} → {reservation.check_out_date}
+            {reservation.bookings && (
+              <>
+                {" · "}
+                <Link href={`/bookings/${reservation.booking_id}`} className="text-accent hover:underline">
+                  {reservation.bookings.booking_number}
+                </Link>
+              </>
+            )}
           </p>
         </div>
         <ReservationLifecycleActions reservationId={reservation.id} status={reservation.status} hasRoom={!!reservation.room_id} />
@@ -74,6 +82,12 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                 <div className="text-xs text-gray-400">Contact</div>
                 <div className="text-gray-800">{reservation.guests?.phone ?? reservation.guests?.email ?? "—"}</div>
               </div>
+              {reservation.guests?.preferences && (
+                <div>
+                  <div className="text-xs text-gray-400">Guest preferences</div>
+                  <div className="text-gray-800">{reservation.guests.preferences}</div>
+                </div>
+              )}
               <div>
                 <div className="text-xs text-gray-400">Room</div>
                 {reservation.rooms ? (
@@ -100,6 +114,12 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                   {reservation.actual_check_out_at ? formatDateTime(reservation.actual_check_out_at, org.timezone) : "—"}
                 </div>
               </div>
+              {reservation.special_requests && (
+                <div className="col-span-2">
+                  <div className="text-xs text-gray-400">Special requests</div>
+                  <div className="text-amber-700">{reservation.special_requests}</div>
+                </div>
+              )}
               {reservation.notes && (
                 <div className="col-span-2">
                   <div className="text-xs text-gray-400">Notes</div>

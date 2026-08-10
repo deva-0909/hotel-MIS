@@ -8,6 +8,7 @@ import {
   checkInReservation,
   checkOutReservation,
   generateInvoiceForReservation,
+  markNoShow,
 } from "@/app/actions/hotel";
 import { Button, Select } from "@/components/ui";
 
@@ -67,6 +68,17 @@ export function ReservationLifecycleActions({
             onClick={() => startTransition(() => cancelReservation(reservationId))}
           >
             Cancel
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={pending}
+            onClick={() => {
+              if (confirm("Mark this reservation as a no-show? Any configured no-show fee will be charged.")) {
+                startTransition(() => markNoShow(reservationId));
+              }
+            }}
+          >
+            No-show
           </Button>
         </>
       )}

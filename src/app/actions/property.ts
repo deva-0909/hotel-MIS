@@ -75,6 +75,21 @@ export async function updateWorkingHours(propertyId: string, formData: FormData)
   revalidatePath(`/organization/properties/${propertyId}`);
 }
 
+export async function updateBookingPolicy(propertyId: string, formData: FormData) {
+  const { supabase } = await requireUser();
+  const bookingPolicy = {
+    cancellation_free_hours: Number(formData.get("cancellation_free_hours") ?? 24),
+    cancellation_fee_percent: Number(formData.get("cancellation_fee_percent") ?? 0),
+    no_show_fee_percent: Number(formData.get("no_show_fee_percent") ?? 0),
+    deposit_type: String(formData.get("deposit_type") || "none"),
+    deposit_percent: Number(formData.get("deposit_percent") ?? 0),
+    deposit_amount: Number(formData.get("deposit_amount") ?? 0),
+  };
+  const { error } = await supabase.from("properties").update({ booking_policy: bookingPolicy }).eq("id", propertyId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/organization/properties/${propertyId}`);
+}
+
 export async function createBuilding(propertyId: string, formData: FormData) {
   const { supabase } = await requireUser();
   const { error } = await supabase.from("buildings").insert({
