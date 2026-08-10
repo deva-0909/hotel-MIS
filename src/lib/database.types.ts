@@ -453,6 +453,74 @@ export type Database = {
           },
         ]
       }
+      devices: {
+        Row: {
+          created_at: string
+          device_type: Database["public"]["Enums"]["device_type"]
+          id: string
+          identifier: string | null
+          is_active: boolean
+          kitchen_id: string | null
+          name: string
+          property_id: string
+          restaurant_id: string | null
+          service_area_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_type: Database["public"]["Enums"]["device_type"]
+          id?: string
+          identifier?: string | null
+          is_active?: boolean
+          kitchen_id?: string | null
+          name: string
+          property_id: string
+          restaurant_id?: string | null
+          service_area_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_type?: Database["public"]["Enums"]["device_type"]
+          id?: string
+          identifier?: string | null
+          is_active?: boolean
+          kitchen_id?: string | null
+          name?: string
+          property_id?: string
+          restaurant_id?: string | null
+          service_area_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devices_kitchen_id_fkey"
+            columns: ["kitchen_id"]
+            isOneToOne: false
+            referencedRelation: "kitchens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_service_area_id_fkey"
+            columns: ["service_area_id"]
+            isOneToOne: false
+            referencedRelation: "service_areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engineering_assets: {
         Row: {
           asset_code: string
@@ -2544,6 +2612,7 @@ export type Database = {
     }
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
+      device_type: "printer" | "kds"
       invoice_status:
         | "draft"
         | "issued"
@@ -2740,6 +2809,7 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["asset", "liability", "equity", "revenue", "expense"],
+      device_type: ["printer", "kds"],
       invoice_status: [
         "draft",
         "issued",

@@ -36,6 +36,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { code: "RG", href: "/organization/regional", label: "Regional Dashboard", roles: ["admin"] },
       { code: "PP", href: "/organization/properties", label: "Properties", roles: ["admin"] },
       { code: "KI", href: "/organization/kitchens", label: "Kitchens", roles: ["admin"] },
+      { code: "DV", href: "/organization/devices", label: "Devices", roles: ["admin"] },
       { code: "CT", href: "/organization/templates", label: "Corporate Templates", roles: ["admin"] },
       { code: "PR", href: "/", label: "Property Dashboard" },
       { code: "RA", href: "/roles-access", label: "Roles & Access", roles: ["admin"] },
