@@ -28,7 +28,7 @@ import { createAnonClient } from "@/lib/supabase/anon-client";
 // connection's api_secret before trusting the body.
 
 type WebhookPayload = {
-  event_type: "reservation" | "cancellation" | "modification" | "no_show";
+  event_type: "ping" | "reservation" | "cancellation" | "modification" | "no_show";
   external_booking_id: string;
   guest_name?: string;
   guest_email?: string;
@@ -52,9 +52,30 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { data: connection } = await supabase.from("channel_connections").select("id, property_id").eq("id", connectionId).maybeSingle();
+  const { data: connection } = await supabase
+    .from("channel_connections")
+    .select("id, property_id, channels(name), properties(name)")
+    .eq("id", connectionId)
+    .maybeSingle();
   if (!connection) {
     return NextResponse.json({ error: "Unknown channel connection" }, { status: 404 });
+  }
+
+  // A no-op health check — reachable and DB-connected, but touches nothing.
+  // This is what the "Send test webhook" button on Organization → Channels
+  // calls: it can only be genuinely proven from the browser that's actually
+  // loading this deployed route, not from this dev sandbox (its outbound
+  // network policy blocks calls to Supabase and to this app's own deployed
+  // URL alike) — so the real verification happens the first time someone
+  // clicks that button in a real browser.
+  if (payload.event_type === "ping") {
+    return NextResponse.json({
+      ok: true,
+      connection_id: connection.id,
+      channel: connection.channels?.name ?? null,
+      property: connection.properties?.name ?? null,
+      received_at: new Date().toISOString(),
+    });
   }
 
   const logResult = async (

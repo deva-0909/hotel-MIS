@@ -4,7 +4,7 @@ import { formatDateTime } from "@/lib/format-datetime";
 import { Card, CardHeader, Badge, Breadcrumb, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { createChannelConnection, updateChannelConnection, mapRatePlanToChannel, unmapRatePlanFromChannel, importIcalFeed } from "@/app/actions/channels";
-import { SyncNowButton, DeleteConnectionButton } from "./channel-actions";
+import { SyncNowButton, DeleteConnectionButton, TestWebhookButton, PreviewIcalButton } from "./channel-actions";
 
 const STATUS_COLOR: Record<string, "green" | "amber" | "red" | "gray"> = {
   connected: "green",
@@ -57,7 +57,10 @@ export default async function ChannelsPage() {
         Connect OTAs and push availability/rates/restrictions to them. Booking.com and Airbnb also support a
         credential-free iCal calendar feed. Agoda, MakeMyTrip, and Goibibo don&apos;t offer a direct property API —
         those reach a hotel through a certified channel-manager aggregator (SiteMinder, RateGain, etc.) instead, so
-        connecting one here records the account but syncs will report that rather than actually pushing.
+        connecting one here records the account but syncs will report that rather than actually pushing. Use
+        &quot;Send test webhook&quot; and &quot;Preview feed&quot; below to confirm each connection&apos;s URL is
+        actually reachable from wherever this app is deployed — that can only be proven from a real browser hitting
+        the live URL, not from a sandboxed dev session.
       </p>
 
       {!!connections?.length && (
@@ -118,11 +121,12 @@ export default async function ChannelsPage() {
                     </form>
 
                     {conn.channels?.supports_api && (
-                      <div>
+                      <div className="space-y-2">
                         <div className="text-xs font-medium uppercase tracking-wide text-gray-400">Webhook URL (give this to the channel)</div>
-                        <code className="mt-1 block break-all rounded bg-gray-50 px-2 py-1 text-xs text-gray-600">
+                        <code className="block break-all rounded bg-gray-50 px-2 py-1 text-xs text-gray-600">
                           /api/channels/webhook/{conn.id}
                         </code>
+                        <TestWebhookButton connectionId={conn.id} />
                       </div>
                     )}
 
@@ -130,9 +134,12 @@ export default async function ChannelsPage() {
                       <div className="space-y-2">
                         <div className="text-xs font-medium uppercase tracking-wide text-gray-400">iCal export feed (give this URL to the channel)</div>
                         {icsFeedUrls?.map((f) => (
-                          <code key={f.url} className="block break-all rounded bg-gray-50 px-2 py-1 text-xs text-gray-600">
-                            {f.name}: {f.url}
-                          </code>
+                          <div key={f.url} className="space-y-1">
+                            <code className="block break-all rounded bg-gray-50 px-2 py-1 text-xs text-gray-600">
+                              {f.name}: {f.url}
+                            </code>
+                            <PreviewIcalButton url={f.url} />
+                          </div>
                         ))}
                         {conn.ical_import_url && (
                           <form action={importIcalFeed.bind(null, conn.id)} className="flex items-end gap-2">
