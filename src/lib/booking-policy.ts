@@ -5,6 +5,8 @@ export type BookingPolicy = {
   deposit_type: "none" | "percent" | "fixed";
   deposit_percent: number;
   deposit_amount: number;
+  standard_check_in_time: string;
+  standard_check_out_time: string;
 };
 
 export const DEFAULT_BOOKING_POLICY: BookingPolicy = {
@@ -14,6 +16,8 @@ export const DEFAULT_BOOKING_POLICY: BookingPolicy = {
   deposit_type: "none",
   deposit_percent: 0,
   deposit_amount: 0,
+  standard_check_in_time: "14:00",
+  standard_check_out_time: "11:00",
 };
 
 // Falls back to the zero-fee/no-deposit default for anything missing or
@@ -29,6 +33,9 @@ export function parseBookingPolicy(raw: unknown): BookingPolicy {
     deposit_type: v.deposit_type === "percent" || v.deposit_type === "fixed" ? v.deposit_type : "none",
     deposit_percent: typeof v.deposit_percent === "number" ? v.deposit_percent : 0,
     deposit_amount: typeof v.deposit_amount === "number" ? v.deposit_amount : 0,
+    standard_check_in_time: typeof v.standard_check_in_time === "string" ? v.standard_check_in_time : DEFAULT_BOOKING_POLICY.standard_check_in_time,
+    standard_check_out_time:
+      typeof v.standard_check_out_time === "string" ? v.standard_check_out_time : DEFAULT_BOOKING_POLICY.standard_check_out_time,
   };
 }
 

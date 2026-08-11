@@ -43,6 +43,13 @@ export function getPropertyToday(timezone: string = DEFAULT_TZ): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: timezone });
 }
 
+// Current wall-clock time in the property's timezone, as "HH:MM" (24h,
+// zero-padded so it sorts/compares lexicographically against a policy's
+// standard_check_in_time/standard_check_out_time strings).
+export function getPropertyCurrentTime(timezone: string = DEFAULT_TZ): string {
+  return new Date().toLocaleTimeString("en-GB", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
 // How far `timezone`'s wall clock is ahead of UTC at the given instant, in
 // milliseconds (handles DST since it's computed at that instant, not a
 // fixed offset).

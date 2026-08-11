@@ -4,12 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
 import { formatDateTime } from "@/lib/format-datetime";
-import { addMiscCharge, collectDeposit } from "@/app/actions/hotel";
+import { addMiscCharge, collectDeposit, transferFolioCharge } from "@/app/actions/hotel";
+import { addOccupant } from "@/app/actions/occupants";
 import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { parseBookingPolicy, computeDepositAmount } from "@/lib/booking-policy";
-import { AssignRoomControl, ReservationLifecycleActions } from "./reservation-actions";
+import { ChangeRoomForm, ReservationLifecycleActions, ViewSignatureLink } from "./reservation-actions";
 import { TransferPropertyForm } from "./transfer-form";
+import { RemoveOccupantButton } from "./occupant-actions";
 
 const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red" | "purple"> = {
   confirmed: "purple",
@@ -27,27 +29,41 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   const { data: reservation } = await supabase
     .from("reservations")
     .select(
-      "id, reservation_number, check_in_date, check_out_date, actual_check_in_at, actual_check_out_at, adults, children, rate_per_night, status, notes, special_requests, guest_id, room_id, room_type_id, booking_id, property_id, guests(id, full_name, phone, email, preferences), rooms(id, room_number), room_types(name), bookings(booking_number), properties(currency, booking_policy)",
+      "id, reservation_number, check_in_date, check_out_date, actual_check_in_at, actual_check_out_at, early_checkin, late_checkout, signature_path, adults, children, rate_per_night, status, notes, special_requests, guest_id, room_id, room_type_id, booking_id, property_id, guests(id, full_name, phone, email, preferences), rooms(id, room_number), room_types(name), bookings(booking_number), properties(currency, booking_policy)",
     )
     .eq("id", id)
     .maybeSingle();
 
   if (!reservation) notFound();
 
-  const [{ data: charges }, { data: availableRooms }, { data: invoices }, { data: otherProperties }] = await Promise.all([
+  const [{ data: charges }, { data: changeableRooms }, { data: invoices }, { data: otherProperties }, { data: occupants }] = await Promise.all([
     supabase.from("folio_charges").select("id, charge_type, description, amount, created_at").eq("reservation_id", id).order("created_at"),
-    reservation.room_id
-      ? Promise.resolve({ data: [] })
-      : supabase
-          .from("rooms")
-          .select("id, room_number")
-          .eq("room_type_id", reservation.room_type_id)
-          .in("status", ["available", "dirty"]),
+    supabase
+      .from("rooms")
+      .select("id, room_number, room_type_id, room_types(name, base_rate)")
+      .eq("property_id", reservation.property_id)
+      .or(`status.in.(available,dirty)${reservation.room_id ? `,id.eq.${reservation.room_id}` : ""}`)
+      .order("room_number"),
     supabase.from("invoices").select("id, invoice_number, status, total_amount, amount_paid").eq("reservation_id", id).neq("status", "cancelled"),
     reservation.status === "checked_in"
       ? supabase.from("properties").select("id, name").eq("is_active", true).neq("id", reservation.property_id).order("name")
       : Promise.resolve({ data: [] }),
+    supabase.from("reservation_occupants").select("id, full_name, age_category, id_proof_type, id_proof_number").eq("reservation_id", id).order("created_at"),
   ]);
+
+  const [{ data: transferTargets }, { data: invoicedCharges }] = await Promise.all([
+    supabase
+      .from("reservations")
+      .select("id, reservation_number, rooms(room_number)")
+      .eq("property_id", reservation.property_id)
+      .neq("id", id)
+      .in("status", ["confirmed", "checked_in"])
+      .order("reservation_number"),
+    charges?.length
+      ? supabase.from("invoice_line_items").select("source_id").eq("source_table", "folio_charges").in("source_id", charges.map((c) => c.id))
+      : Promise.resolve({ data: [] }),
+  ]);
+  const invoicedChargeIds = new Set((invoicedCharges ?? []).map((li) => li.source_id));
 
   const total = charges?.reduce((sum, c) => sum + Number(c.amount), 0) ?? 0;
   const currency = reservation.properties?.currency ?? org.currency;
@@ -119,11 +135,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
               )}
               <div>
                 <div className="text-xs text-gray-400">Room</div>
-                {reservation.rooms ? (
-                  <div className="text-gray-800">{reservation.rooms.room_number}</div>
-                ) : (
-                  <AssignRoomControl reservationId={reservation.id} rooms={availableRooms ?? []} />
-                )}
+                <div className="text-gray-800">{reservation.rooms ? reservation.rooms.room_number : "Unassigned"}</div>
               </div>
               <div>
                 <div className="text-xs text-gray-400">Occupancy</div>
@@ -139,10 +151,19 @@ export default async function ReservationDetailPage({ params }: { params: Promis
               <div>
                 <div className="text-xs text-gray-400">Actual check-in / out</div>
                 <div className="text-gray-800">
-                  {reservation.actual_check_in_at ? formatDateTime(reservation.actual_check_in_at, org.timezone) : "—"} /{" "}
+                  {reservation.actual_check_in_at ? formatDateTime(reservation.actual_check_in_at, org.timezone) : "—"}
+                  {reservation.early_checkin && <Badge color="amber">Early check-in</Badge>}
+                  {" / "}
                   {reservation.actual_check_out_at ? formatDateTime(reservation.actual_check_out_at, org.timezone) : "—"}
+                  {reservation.late_checkout && <Badge color="amber">Late checkout</Badge>}
                 </div>
               </div>
+              {reservation.signature_path && (
+                <div>
+                  <div className="text-xs text-gray-400">Signature</div>
+                  <ViewSignatureLink filePath={reservation.signature_path} />
+                </div>
+              )}
               {reservation.special_requests && (
                 <div className="col-span-2">
                   <div className="text-xs text-gray-400">Special requests</div>
@@ -158,6 +179,24 @@ export default async function ReservationDetailPage({ params }: { params: Promis
             </div>
           </Card>
 
+          {(reservation.status === "confirmed" || reservation.status === "checked_in") && (
+            <Card>
+              <CardHeader title={reservation.room_id ? "Change room / move dates" : "Assign room"} />
+              <div className="px-5 py-4">
+                <ChangeRoomForm
+                  reservationId={reservation.id}
+                  rooms={changeableRooms ?? []}
+                  currentRoomId={reservation.room_id}
+                  currentRoomTypeId={reservation.room_type_id}
+                  currentRate={reservation.rate_per_night}
+                  checkInDate={reservation.check_in_date}
+                  checkOutDate={reservation.check_out_date}
+                  currency={currency}
+                />
+              </div>
+            </Card>
+          )}
+
           <Card>
             <CardHeader title={`Folio charges — total ${formatMoney(total, currency)}`} />
             {!charges?.length ? (
@@ -169,6 +208,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                     <th className="px-5 py-2 font-medium">Description</th>
                     <th className="px-5 py-2 font-medium">Type</th>
                     <th className="px-5 py-2 font-medium">Amount</th>
+                    {!!transferTargets?.length && <th className="px-5 py-2 font-medium">Transfer to</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -177,6 +217,27 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                       <td className="px-5 py-2.5 text-gray-800">{c.description}</td>
                       <td className="px-5 py-2.5 capitalize text-gray-500">{c.charge_type}</td>
                       <td className="px-5 py-2.5 text-gray-800">{formatMoney(c.amount, currency)}</td>
+                      {!!transferTargets?.length && (
+                        <td className="px-5 py-2.5">
+                          {invoicedChargeIds.has(c.id) ? (
+                            <span className="text-xs text-gray-400">Invoiced</span>
+                          ) : (
+                            <form action={transferFolioCharge.bind(null, c.id)} className="flex items-center gap-1">
+                              <Select name="target_reservation_id" className="w-32 text-xs">
+                                <option value="">Select…</option>
+                                {transferTargets.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.rooms?.room_number ?? t.reservation_number}
+                                  </option>
+                                ))}
+                              </Select>
+                              <button type="submit" className="text-xs text-accent hover:underline">
+                                Go
+                              </button>
+                            </form>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -265,6 +326,53 @@ export default async function ReservationDetailPage({ params }: { params: Promis
               <TransferPropertyForm reservationId={reservation.id} properties={transferOptions} currency={currency} />
             </Card>
           )}
+
+          <Card>
+            <CardHeader title={`Room occupants (${occupants?.length ?? 0})`} />
+            <p className="px-5 pt-3 text-xs text-gray-500">
+              Every adult staying in this room, beyond the booking guest — for KYC/registration records.
+            </p>
+            {!occupants?.length ? (
+              <EmptyState>No additional occupants recorded.</EmptyState>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {occupants.map((o) => (
+                  <div key={o.id} className="flex items-center justify-between px-5 py-2 text-sm">
+                    <div>
+                      <div className="text-gray-800">{o.full_name}</div>
+                      <div className="text-xs capitalize text-gray-400">
+                        {o.age_category}
+                        {o.id_proof_type ? ` · ${o.id_proof_type} ${o.id_proof_number ?? ""}` : ""}
+                      </div>
+                    </div>
+                    <RemoveOccupantButton occupantId={o.id} reservationId={reservation.id} />
+                  </div>
+                ))}
+              </div>
+            )}
+            <form action={addOccupant.bind(null, reservation.id)} className="space-y-2 border-t border-gray-100 px-5 py-4">
+              <div>
+                <Label>Full name</Label>
+                <Input name="full_name" required />
+              </div>
+              <div>
+                <Label>Type</Label>
+                <Select name="age_category" defaultValue="adult">
+                  <option value="adult">Adult</option>
+                  <option value="child">Child</option>
+                </Select>
+              </div>
+              <div>
+                <Label>ID proof type</Label>
+                <Input name="id_proof_type" />
+              </div>
+              <div>
+                <Label>ID proof number</Label>
+                <Input name="id_proof_number" />
+              </div>
+              <SubmitButton variant="secondary">Add occupant</SubmitButton>
+            </form>
+          </Card>
         </div>
       </div>
     </div>

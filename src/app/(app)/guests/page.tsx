@@ -40,8 +40,12 @@ export default async function GuestsPage() {
                 {guests.map((g) => (
                   <tr key={g.id} className="border-b border-gray-50 last:border-0">
                     <td className="px-5 py-2.5 font-medium text-gray-900">
-                      <Link href={`/reservations?guest=${g.id}`} className="hover:underline">
+                      <Link href={`/guests/${g.id}`} className="hover:underline">
                         {g.full_name}
+                      </Link>
+                      {" · "}
+                      <Link href={`/reservations?guest=${g.id}`} className="text-xs font-normal text-gray-400 hover:underline">
+                        stays
                       </Link>
                     </td>
                     <td className="px-5 py-2.5 text-gray-600">{g.phone ?? "—"}</td>
@@ -77,6 +81,10 @@ export default async function GuestsPage() {
             <div>
               <Label>ID proof number</Label>
               <Input name="id_proof_number" />
+            </div>
+            <div>
+              <Label>Nationality</Label>
+              <Input name="nationality" />
             </div>
             <div>
               <Label>Address</Label>

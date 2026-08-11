@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
 import { Card, CardHeader, Badge, Breadcrumb, EmptyState } from "@/components/ui";
+import { SubmitButton } from "@/components/submit-button";
+import { generateMasterInvoice } from "@/app/actions/billing";
 import { CancelBookingButton } from "./booking-actions";
 
 const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red" | "purple"> = {
@@ -31,7 +33,9 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
   const { data: reservations } = await supabase
     .from("reservations")
-    .select("id, reservation_number, check_in_date, check_out_date, status, rate_per_night, adults, children, special_requests, properties(name, currency), rooms(room_number), room_types(name)")
+    .select(
+      "id, reservation_number, check_in_date, check_out_date, status, rate_per_night, adults, children, special_requests, property_id, properties(name, currency), rooms(room_number), room_types(name)",
+    )
     .eq("booking_id", id)
     .order("check_in_date");
 
@@ -40,6 +44,17 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const totalRoomRevenue = (reservations ?? []).reduce((sum, r) => sum + r.rate_per_night * nightsFor(r.check_in_date, r.check_out_date), 0);
   const commissionAmount = booking.commission_percent ? (totalRoomRevenue * booking.commission_percent) / 100 : 0;
   const cancellable = (reservations ?? []).some((r) => r.status === "confirmed" || r.status === "checked_in");
+
+  const reservationIds = (reservations ?? []).map((r) => r.id);
+  const [{ data: charges }, { data: masterInvoices }] = await Promise.all([
+    reservationIds.length
+      ? supabase.from("folio_charges").select("amount").in("reservation_id", reservationIds)
+      : Promise.resolve({ data: [] }),
+    supabase.from("invoices").select("id, invoice_number, status, total_amount").eq("booking_id", id).neq("status", "cancelled"),
+  ]);
+  const unbilledTotal = (charges ?? []).reduce((sum, c) => sum + Number(c.amount), 0);
+  const distinctProperties = new Set((reservations ?? []).map((r) => r.property_id));
+  const currency = reservations?.[0]?.properties?.currency ?? org.currency;
 
   return (
     <div className="space-y-6">
@@ -131,10 +146,46 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 {booking.companies?.gstin && <div className="text-xs text-gray-500">GSTIN {booking.companies.gstin}</div>}
                 {booking.commission_percent != null && (
                   <div className="mt-2 text-xs text-gray-500">
-                    Commission: {booking.commission_percent}% · {formatMoney(commissionAmount, reservations?.[0]?.properties?.currency ?? org.currency)}
+                    Commission: {booking.commission_percent}% · {formatMoney(commissionAmount, currency)}
                   </div>
                 )}
               </div>
+            </Card>
+          )}
+
+          {(reservations?.length ?? 0) > 1 && (
+            <Card>
+              <CardHeader title="Group billing" />
+              <div className="space-y-1 px-5 pt-3 text-sm text-gray-600">
+                <div className="flex justify-between">
+                  <span>Unbilled charges across all rooms</span>
+                  <span>{formatMoney(unbilledTotal, currency)}</span>
+                </div>
+              </div>
+              {!masterInvoices?.length ? null : (
+                <div className="divide-y divide-gray-50 border-t border-gray-100">
+                  {masterInvoices.map((inv) => (
+                    <Link
+                      key={inv.id}
+                      href={`/billing/invoices/${inv.id}`}
+                      className="flex items-center justify-between px-5 py-2 text-sm hover:bg-gray-50"
+                    >
+                      <span className="font-medium text-slate-900">{inv.invoice_number}</span>
+                      <span className="text-gray-500">{formatMoney(inv.total_amount, currency)}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {distinctProperties.size > 1 ? (
+                <p className="border-t border-gray-100 px-5 py-3 text-xs text-amber-600">
+                  This booking spans multiple properties — invoice each property&apos;s rooms separately from their own
+                  reservation pages instead of one master invoice.
+                </p>
+              ) : (
+                <form action={generateMasterInvoice.bind(null, booking.id)} className="border-t border-gray-100 px-5 py-4">
+                  <SubmitButton variant="secondary">Generate master invoice for all rooms</SubmitButton>
+                </form>
+              )}
             </Card>
           )}
         </div>

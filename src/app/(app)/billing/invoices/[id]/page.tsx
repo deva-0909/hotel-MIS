@@ -4,7 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { formatMoney } from "@/lib/format-money";
 import { formatDate } from "@/lib/format-datetime";
-import { addInvoiceLineItem, recordPayment, recordRefund, updateInvoiceAdjustments } from "@/app/actions/billing";
+import {
+  addInvoiceLineItem,
+  recordPayment,
+  recordRefund,
+  updateInvoiceAdjustments,
+  splitInvoiceLineItems,
+  mergeInvoiceInto,
+  updateInvoiceBillTo,
+} from "@/app/actions/billing";
 import { Card, CardHeader, Badge, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { CancelInvoiceButton, PostInvoiceToLedgerButton, PostPaymentToLedgerButton } from "./invoice-actions";
@@ -26,16 +34,25 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
-      "id, invoice_number, status, subtotal, tax_amount, discount_amount, total_amount, amount_paid, refunded_amount, notes, guests(full_name, phone)",
+      "id, invoice_number, status, subtotal, tax_amount, discount_amount, total_amount, amount_paid, refunded_amount, notes, guest_id, bill_to, company_id, travel_agent_id, guests(full_name, phone)",
     )
     .eq("id", id)
     .maybeSingle();
 
   if (!invoice) notFound();
 
-  const [{ data: lineItems }, { data: payments }] = await Promise.all([
+  const [{ data: lineItems }, { data: payments }, { data: mergeCandidates }, { data: companies }, { data: travelAgents }] = await Promise.all([
     supabase.from("invoice_line_items").select("id, description, source_type, quantity, unit_price, amount").eq("invoice_id", id).order("created_at"),
     supabase.from("payments").select("id, amount, method, reference_number, paid_at, refunds(amount)").eq("invoice_id", id).order("paid_at"),
+    supabase
+      .from("invoices")
+      .select("id, invoice_number, total_amount")
+      .eq("guest_id", invoice.guest_id)
+      .neq("id", id)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false }),
+    supabase.from("companies").select("id, name").eq("is_active", true).order("name"),
+    supabase.from("travel_agents").select("id, name").eq("is_active", true).order("name"),
   ]);
 
   const balanceDue = Number(invoice.total_amount) - Number(invoice.amount_paid);
@@ -85,26 +102,39 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             {!lineItems?.length ? (
               <EmptyState>No line items yet.</EmptyState>
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left text-xs uppercase text-gray-400">
-                    <th className="px-5 py-2 font-medium">Description</th>
-                    <th className="px-5 py-2 font-medium">Qty</th>
-                    <th className="px-5 py-2 font-medium">Unit price</th>
-                    <th className="px-5 py-2 font-medium">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineItems.map((li) => (
-                    <tr key={li.id} className="border-b border-gray-50 last:border-0">
-                      <td className="px-5 py-2.5 text-gray-800">{li.description}</td>
-                      <td className="px-5 py-2.5 text-gray-600">{li.quantity}</td>
-                      <td className="px-5 py-2.5 text-gray-600">{formatMoney(li.unit_price, org.currency)}</td>
-                      <td className="px-5 py-2.5 text-gray-800">{formatMoney(li.amount, org.currency)}</td>
+              <form action={splitInvoiceLineItems.bind(null, invoice.id)}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-left text-xs uppercase text-gray-400">
+                      {editable && lineItems.length > 1 && <th className="w-8 px-5 py-2"></th>}
+                      <th className="px-5 py-2 font-medium">Description</th>
+                      <th className="px-5 py-2 font-medium">Qty</th>
+                      <th className="px-5 py-2 font-medium">Unit price</th>
+                      <th className="px-5 py-2 font-medium">Amount</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {lineItems.map((li) => (
+                      <tr key={li.id} className="border-b border-gray-50 last:border-0">
+                        {editable && lineItems.length > 1 && (
+                          <td className="px-5 py-2.5">
+                            <input type="checkbox" name="line_item_ids" value={li.id} />
+                          </td>
+                        )}
+                        <td className="px-5 py-2.5 text-gray-800">{li.description}</td>
+                        <td className="px-5 py-2.5 text-gray-600">{li.quantity}</td>
+                        <td className="px-5 py-2.5 text-gray-600">{formatMoney(li.unit_price, org.currency)}</td>
+                        <td className="px-5 py-2.5 text-gray-800">{formatMoney(li.amount, org.currency)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {editable && lineItems.length > 1 && (
+                  <div className="border-t border-gray-100 px-5 py-3">
+                    <SubmitButton variant="secondary">Split selected into a new invoice</SubmitButton>
+                  </div>
+                )}
+              </form>
             )}
             {editable && (
               <form action={addInvoiceLineItem.bind(null, invoice.id)} className="flex items-end gap-2 border-t border-gray-100 px-5 py-4">
@@ -250,6 +280,65 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             </form>
           )}
         </Card>
+
+        {editable && (
+          <Card>
+            <CardHeader title="Bill to" />
+            <form action={updateInvoiceBillTo.bind(null, invoice.id)} className="space-y-2 px-5 py-4">
+              <div>
+                <Select name="bill_to" defaultValue={invoice.bill_to}>
+                  <option value="guest">Guest</option>
+                  <option value="company">Company</option>
+                  <option value="travel_agent">Travel agent</option>
+                </Select>
+              </div>
+              <div>
+                <Label>Company (if billed to company)</Label>
+                <Select name="company_id" defaultValue={invoice.company_id ?? ""}>
+                  <option value="">—</option>
+                  {companies?.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label>Travel agent (if billed to agent)</Label>
+                <Select name="travel_agent_id" defaultValue={invoice.travel_agent_id ?? ""}>
+                  <option value="">—</option>
+                  {travelAgents?.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <SubmitButton variant="secondary">Update bill-to</SubmitButton>
+            </form>
+          </Card>
+        )}
+
+        {editable && !!mergeCandidates?.length && (
+          <Card>
+            <CardHeader title="Merge another invoice in" />
+            <p className="px-5 pt-3 text-xs text-gray-500">
+              Moves that invoice&apos;s line items and payments here, then cancels it — for when two bills for this guest
+              should have been one.
+            </p>
+            <form action={mergeInvoiceInto.bind(null, invoice.id)} className="flex items-end gap-2 px-5 py-4">
+              <Select name="source_invoice_id" className="flex-1" required>
+                <option value="">Select invoice…</option>
+                {mergeCandidates.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.invoice_number} — {formatMoney(m.total_amount, org.currency)}
+                  </option>
+                ))}
+              </Select>
+              <SubmitButton variant="secondary">Merge in</SubmitButton>
+            </form>
+          </Card>
+        )}
       </div>
     </div>
   );

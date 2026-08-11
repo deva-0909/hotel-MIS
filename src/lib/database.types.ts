@@ -1072,6 +1072,61 @@ export type Database = {
           },
         ]
       }
+      guest_documents: {
+        Row: {
+          document_type: string
+          file_name: string
+          file_path: string
+          guest_id: string
+          id: string
+          reservation_id: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          document_type: string
+          file_name: string
+          file_path: string
+          guest_id: string
+          id?: string
+          reservation_id?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          guest_id?: string
+          id?: string
+          reservation_id?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_documents_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_documents_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guests: {
         Row: {
           address: string | null
@@ -1084,10 +1139,16 @@ export type Database = {
           id_proof_type: string | null
           loyalty_points: number
           loyalty_tier: string | null
+          nationality: string | null
           notes: string | null
+          passport_country: string | null
+          passport_expiry: string | null
+          passport_number: string | null
           phone: string | null
           preferences: string | null
           updated_at: string
+          visa_expiry: string | null
+          visa_number: string | null
         }
         Insert: {
           address?: string | null
@@ -1100,10 +1161,16 @@ export type Database = {
           id_proof_type?: string | null
           loyalty_points?: number
           loyalty_tier?: string | null
+          nationality?: string | null
           notes?: string | null
+          passport_country?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
           phone?: string | null
           preferences?: string | null
           updated_at?: string
+          visa_expiry?: string | null
+          visa_number?: string | null
         }
         Update: {
           address?: string | null
@@ -1116,10 +1183,16 @@ export type Database = {
           id_proof_type?: string | null
           loyalty_points?: number
           loyalty_tier?: string | null
+          nationality?: string | null
           notes?: string | null
+          passport_country?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
           phone?: string | null
           preferences?: string | null
           updated_at?: string
+          visa_expiry?: string | null
+          visa_number?: string | null
         }
         Relationships: [
           {
@@ -1338,6 +1411,9 @@ export type Database = {
       invoices: {
         Row: {
           amount_paid: number
+          bill_to: string
+          booking_id: string | null
+          company_id: string | null
           created_at: string
           created_by: string | null
           discount_amount: number
@@ -1354,10 +1430,14 @@ export type Database = {
           subtotal: number
           tax_amount: number
           total_amount: number
+          travel_agent_id: string | null
           updated_at: string
         }
         Insert: {
           amount_paid?: number
+          bill_to?: string
+          booking_id?: string | null
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           discount_amount?: number
@@ -1374,10 +1454,14 @@ export type Database = {
           subtotal?: number
           tax_amount?: number
           total_amount?: number
+          travel_agent_id?: string | null
           updated_at?: string
         }
         Update: {
           amount_paid?: number
+          bill_to?: string
+          booking_id?: string | null
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           discount_amount?: number
@@ -1394,9 +1478,24 @@ export type Database = {
           subtotal?: number
           tax_amount?: number
           total_amount?: number
+          travel_agent_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_created_by_fkey"
             columns: ["created_by"]
@@ -1430,6 +1529,13 @@ export type Database = {
             columns: ["reservation_id"]
             isOneToOne: false
             referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_travel_agent_id_fkey"
+            columns: ["travel_agent_id"]
+            isOneToOne: false
+            referencedRelation: "travel_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -2314,6 +2420,44 @@ export type Database = {
           },
         ]
       }
+      reservation_occupants: {
+        Row: {
+          age_category: string
+          created_at: string
+          full_name: string
+          id: string
+          id_proof_number: string | null
+          id_proof_type: string | null
+          reservation_id: string
+        }
+        Insert: {
+          age_category?: string
+          created_at?: string
+          full_name: string
+          id?: string
+          id_proof_number?: string | null
+          id_proof_type?: string | null
+          reservation_id: string
+        }
+        Update: {
+          age_category?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          id_proof_number?: string | null
+          id_proof_type?: string | null
+          reservation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_occupants_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           actual_check_in_at: string | null
@@ -2325,8 +2469,10 @@ export type Database = {
           children: number
           created_at: string
           created_by: string | null
+          early_checkin: boolean
           guest_id: string
           id: string
+          late_checkout: boolean
           notes: string | null
           property_id: string
           rate_per_night: number
@@ -2334,6 +2480,7 @@ export type Database = {
           reservation_number: string
           room_id: string | null
           room_type_id: string
+          signature_path: string | null
           special_requests: string | null
           status: Database["public"]["Enums"]["reservation_status"]
           updated_at: string
@@ -2348,8 +2495,10 @@ export type Database = {
           children?: number
           created_at?: string
           created_by?: string | null
+          early_checkin?: boolean
           guest_id: string
           id?: string
+          late_checkout?: boolean
           notes?: string | null
           property_id: string
           rate_per_night?: number
@@ -2357,6 +2506,7 @@ export type Database = {
           reservation_number?: string
           room_id?: string | null
           room_type_id: string
+          signature_path?: string | null
           special_requests?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
           updated_at?: string
@@ -2371,8 +2521,10 @@ export type Database = {
           children?: number
           created_at?: string
           created_by?: string | null
+          early_checkin?: boolean
           guest_id?: string
           id?: string
+          late_checkout?: boolean
           notes?: string | null
           property_id?: string
           rate_per_night?: number
@@ -2380,6 +2532,7 @@ export type Database = {
           reservation_number?: string
           room_id?: string | null
           room_type_id?: string
+          signature_path?: string | null
           special_requests?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
           updated_at?: string
@@ -3416,6 +3569,10 @@ export type Database = {
         Args: { p_reservation_id: string; p_staff_id: string }
         Returns: string
       }
+      generate_master_invoice_from_booking: {
+        Args: { p_booking_id: string; p_staff_id: string }
+        Returns: string
+      }
       get_busy_ranges_for_ical: {
         Args: { p_room_type_id: string; p_token: string }
         Returns: {
@@ -3436,6 +3593,16 @@ export type Database = {
       is_staff_for_transfer: {
         Args: { p_from: string; p_to: string }
         Returns: boolean
+      }
+      move_reservation: {
+        Args: {
+          p_new_check_in: string
+          p_new_check_out: string
+          p_new_rate_per_night?: number
+          p_new_room_id: string
+          p_reservation_id: string
+        }
+        Returns: undefined
       }
       next_doc_number: {
         Args: { prefix: string; seq_name: string }

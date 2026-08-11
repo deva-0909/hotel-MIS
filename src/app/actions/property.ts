@@ -84,6 +84,8 @@ export async function updateBookingPolicy(propertyId: string, formData: FormData
     deposit_type: String(formData.get("deposit_type") || "none"),
     deposit_percent: Number(formData.get("deposit_percent") ?? 0),
     deposit_amount: Number(formData.get("deposit_amount") ?? 0),
+    standard_check_in_time: String(formData.get("standard_check_in_time") || "14:00"),
+    standard_check_out_time: String(formData.get("standard_check_out_time") || "11:00"),
   };
   const { error } = await supabase.from("properties").update({ booking_policy: bookingPolicy }).eq("id", propertyId);
   if (error) throw new Error(error.message);

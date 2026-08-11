@@ -98,3 +98,106 @@ export async function cancelInvoice(invoiceId: string) {
   revalidatePath(`/billing/invoices/${invoiceId}`);
   revalidatePath("/billing/invoices");
 }
+
+// Splits selected line items off into a brand-new invoice for the same
+// guest/reservation/booking — e.g. the company pays for the room, the
+// guest pays incidentals out of pocket, split into two separate bills.
+export async function splitInvoiceLineItems(invoiceId: string, formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const lineItemIds = formData.getAll("line_item_ids") as string[];
+  if (!lineItemIds.length) throw new Error("Select at least one line item to split off");
+
+  const { data: source, error: sourceError } = await supabase
+    .from("invoices")
+    .select("guest_id, reservation_id, booking_id, property_id, bill_to, company_id, travel_agent_id")
+    .eq("id", invoiceId)
+    .single();
+  if (sourceError) throw new Error(sourceError.message);
+
+  const { data: newInvoice, error: createError } = await supabase
+    .from("invoices")
+    .insert({
+      guest_id: source.guest_id,
+      reservation_id: source.reservation_id,
+      booking_id: source.booking_id,
+      property_id: source.property_id,
+      bill_to: source.bill_to,
+      company_id: source.company_id,
+      travel_agent_id: source.travel_agent_id,
+      status: "draft",
+      issued_at: new Date().toISOString(),
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
+  if (createError) throw new Error(createError.message);
+
+  const { error: moveError } = await supabase
+    .from("invoice_line_items")
+    .update({ invoice_id: newInvoice.id })
+    .in("id", lineItemIds)
+    .eq("invoice_id", invoiceId);
+  if (moveError) throw new Error(moveError.message);
+
+  await supabase.rpc("recompute_invoice_totals", { p_invoice_id: invoiceId });
+  await supabase.rpc("recompute_invoice_totals", { p_invoice_id: newInvoice.id });
+
+  revalidatePath(`/billing/invoices/${invoiceId}`);
+  revalidatePath("/billing/invoices");
+  redirect(`/billing/invoices/${newInvoice.id}`);
+}
+
+// Folds a source invoice's line items and payments into a target invoice,
+// then cancels the (now-empty) source — the reverse of a split, for when
+// two bills should have been one all along.
+export async function mergeInvoiceInto(targetInvoiceId: string, formData: FormData) {
+  const { supabase } = await requireUser();
+  const sourceInvoiceId = String(formData.get("source_invoice_id"));
+  if (!sourceInvoiceId) throw new Error("Select an invoice to merge in");
+  if (targetInvoiceId === sourceInvoiceId) throw new Error("Cannot merge an invoice into itself");
+
+  const { error: moveItemsError } = await supabase
+    .from("invoice_line_items")
+    .update({ invoice_id: targetInvoiceId })
+    .eq("invoice_id", sourceInvoiceId);
+  if (moveItemsError) throw new Error(moveItemsError.message);
+
+  const { error: movePaymentsError } = await supabase.from("payments").update({ invoice_id: targetInvoiceId }).eq("invoice_id", sourceInvoiceId);
+  if (movePaymentsError) throw new Error(movePaymentsError.message);
+
+  await supabase.rpc("recompute_invoice_totals", { p_invoice_id: targetInvoiceId });
+
+  const { error: cancelError } = await supabase.from("invoices").update({ status: "cancelled" }).eq("id", sourceInvoiceId);
+  if (cancelError) throw new Error(cancelError.message);
+  await supabase.rpc("recompute_invoice_totals", { p_invoice_id: sourceInvoiceId });
+
+  revalidatePath(`/billing/invoices/${targetInvoiceId}`);
+  revalidatePath(`/billing/invoices/${sourceInvoiceId}`);
+  revalidatePath("/billing/invoices");
+}
+
+export async function updateInvoiceBillTo(invoiceId: string, formData: FormData) {
+  const { supabase } = await requireUser();
+  const billTo = String(formData.get("bill_to") || "guest");
+  const { error } = await supabase
+    .from("invoices")
+    .update({
+      bill_to: billTo,
+      company_id: billTo === "company" ? (formData.get("company_id") as string) || null : null,
+      travel_agent_id: billTo === "travel_agent" ? (formData.get("travel_agent_id") as string) || null : null,
+    })
+    .eq("id", invoiceId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/billing/invoices/${invoiceId}`);
+}
+
+export async function generateMasterInvoice(bookingId: string) {
+  const { supabase, user } = await requireUser();
+  const { data: invoiceId, error } = await supabase.rpc("generate_master_invoice_from_booking", {
+    p_booking_id: bookingId,
+    p_staff_id: user.id,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/bookings/${bookingId}`);
+  redirect(`/billing/invoices/${invoiceId}`);
+}

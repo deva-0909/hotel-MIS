@@ -2,38 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
 import { getPropertyToday } from "@/lib/format-datetime";
 import { Card, Breadcrumb, EmptyState } from "@/components/ui";
+import { RoomRackGrid } from "./room-rack-grid";
 
 const DAYS = 14;
-
-function cellCode(
-  date: string,
-  room: { status: string },
-  reservations: { check_in_date: string; check_out_date: string; status: string }[],
-) {
-  if (room.status === "out_of_order" || room.status === "maintenance") return "X";
-
-  // Departure day is checked separately: a stay's check_out_date is excluded
-  // from its own "covering" range below, so without this branch a guest
-  // leaving today would render as merely "Vacant" instead of "Departure".
-  const departing = reservations.find((r) => r.check_out_date === date && r.status === "checked_in");
-  if (departing) return "D";
-
-  const covering = reservations.find(
-    (r) => date >= r.check_in_date && date < r.check_out_date && (r.status === "confirmed" || r.status === "checked_in"),
-  );
-  if (!covering) return "V";
-  if (covering.check_in_date === date) return "A";
-  return "O";
-}
-
-const CODE_LABEL: Record<string, string> = { O: "Occupied", V: "Vacant", A: "Arrival", D: "Departure", X: "Out of order" };
-const CODE_STYLE: Record<string, string> = {
-  O: "bg-accent-soft text-accent",
-  V: "bg-gray-50 text-gray-400",
-  A: "bg-emerald-50 text-emerald-700",
-  D: "bg-blue-50 text-blue-700",
-  X: "bg-red-50 text-red-600",
-};
 
 export default async function RoomCalendarPage({ searchParams }: { searchParams: Promise<{ floor?: string }> }) {
   const { floor } = await searchParams;
@@ -42,7 +13,7 @@ export default async function RoomCalendarPage({ searchParams }: { searchParams:
 
   const { data: rooms } = await supabase
     .from("rooms")
-    .select("id, room_number, status, floors(name)")
+    .select("id, room_number, status, room_type_id, room_types(name, base_rate), floors(name)")
     .eq("property_id", org.propertyId)
     .order("room_number");
   const floors = Array.from(new Set((rooms ?? []).map((r) => r.floors?.name).filter(Boolean))) as string[];
@@ -61,23 +32,20 @@ export default async function RoomCalendarPage({ searchParams }: { searchParams:
 
   const { data: reservations } = await supabase
     .from("reservations")
-    .select("room_id, check_in_date, check_out_date, status")
+    .select("id, room_id, room_type_id, check_in_date, check_out_date, status, rate_per_night, guests(full_name)")
     .eq("property_id", org.propertyId)
     .in("status", ["confirmed", "checked_in"])
     .lte("check_in_date", dates[dates.length - 1])
     .gte("check_out_date", dates[0]);
 
-  const reservationsByRoom = new Map<string, typeof reservations>();
-  for (const r of reservations ?? []) {
-    if (!r.room_id) continue;
-    reservationsByRoom.set(r.room_id, [...(reservationsByRoom.get(r.room_id) ?? []), r]);
-  }
-
   return (
     <div className="space-y-6">
       <Breadcrumb items={[org.corporateName, org.regionName, org.hotelName, "Room Calendar"]} />
-      <h1 className="text-xl text-gray-900">Room Availability Calendar</h1>
-      <p className="-mt-4 text-sm text-gray-500">14-day room-level view, filtered by floor.</p>
+      <h1 className="text-xl text-gray-900">Room Rack</h1>
+      <p className="-mt-4 text-sm text-gray-500">
+        14-day room rack. Drag a booking bar onto a different room or date to move it — dropping onto a different
+        room type re-rates it as an upgrade/downgrade. Click a bar to open the reservation.
+      </p>
 
       <div className="flex flex-wrap gap-2">
         {floors.map((f) => (
@@ -93,52 +61,24 @@ export default async function RoomCalendarPage({ searchParams }: { searchParams:
         ))}
       </div>
 
-      <Card className="overflow-x-auto">
+      <Card>
         {!floorRooms.length ? (
           <EmptyState>No rooms on this floor.</EmptyState>
         ) : (
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-black/10 text-left uppercase text-gray-400">
-                <th className="whitespace-nowrap px-3 py-2 font-medium">Room</th>
-                {dates.map((d) => (
-                  <th key={d} className="whitespace-nowrap px-2 py-2 text-center font-medium">
-                    {new Date(d).toLocaleDateString([], { day: "2-digit", month: "short" })}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {floorRooms.map((room) => (
-                <tr key={room.id} className="border-b border-gray-50 last:border-0">
-                  <td className="whitespace-nowrap px-3 py-1.5 font-medium text-gray-800">{room.room_number}</td>
-                  {dates.map((d) => {
-                    const code = cellCode(d, room, reservationsByRoom.get(room.id) ?? []);
-                    return (
-                      <td key={d} className="px-1 py-1 text-center">
-                        <span
-                          title={CODE_LABEL[code]}
-                          className={`inline-flex h-6 w-6 items-center justify-center rounded ${CODE_STYLE[code]}`}
-                        >
-                          {code}
-                        </span>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <RoomRackGrid rooms={floorRooms} reservations={reservations ?? []} dates={dates} currency={org.currency} />
         )}
       </Card>
 
       <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-        {Object.entries(CODE_LABEL).map(([code, label]) => (
-          <div key={code} className="flex items-center gap-1.5">
-            <span className={`inline-flex h-5 w-5 items-center justify-center rounded ${CODE_STYLE[code]}`}>{code}</span>
-            {label}
-          </div>
-        ))}
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded border border-purple-300 bg-purple-100" /> Confirmed
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded border border-accent/40 bg-accent-soft" /> Checked in
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded bg-red-50" /> Maintenance / out of order (not droppable)
+        </div>
       </div>
     </div>
   );

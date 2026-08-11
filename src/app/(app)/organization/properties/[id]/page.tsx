@@ -216,6 +216,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               <Label>Deposit amount (if fixed)</Label>
               <Input name="deposit_amount" type="number" min={0} step="0.01" defaultValue={bookingPolicy.deposit_amount} />
             </div>
+            <div>
+              <Label>Standard check-in time</Label>
+              <Input name="standard_check_in_time" type="time" defaultValue={bookingPolicy.standard_check_in_time} />
+            </div>
+            <div>
+              <Label>Standard check-out time</Label>
+              <Input name="standard_check_out_time" type="time" defaultValue={bookingPolicy.standard_check_out_time} />
+            </div>
             <div className="sm:col-span-2">
               <SubmitButton variant="secondary">Save booking policy</SubmitButton>
             </div>
