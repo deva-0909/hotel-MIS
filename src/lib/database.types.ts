@@ -1072,6 +1072,54 @@ export type Database = {
           },
         ]
       }
+      guest_communications: {
+        Row: {
+          channel: string
+          created_at: string
+          created_by: string | null
+          direction: string
+          guest_id: string
+          id: string
+          notes: string | null
+          subject: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          guest_id: string
+          id?: string
+          notes?: string | null
+          subject?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          guest_id?: string
+          id?: string
+          notes?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_communications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_communications_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_documents: {
         Row: {
           document_type: string
@@ -1127,12 +1175,160 @@ export type Database = {
           },
         ]
       }
+      guest_feedback: {
+        Row: {
+          category: string | null
+          comments: string | null
+          created_at: string
+          created_by: string | null
+          guest_id: string
+          id: string
+          rating: number | null
+          reservation_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          comments?: string | null
+          created_at?: string
+          created_by?: string | null
+          guest_id: string
+          id?: string
+          rating?: number | null
+          reservation_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          comments?: string | null
+          created_at?: string
+          created_by?: string | null
+          guest_id?: string
+          id?: string
+          rating?: number | null
+          reservation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_feedback_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_feedback_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_feedback_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_requests: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          guest_id: string
+          id: string
+          priority: string
+          property_id: string | null
+          request_type: string
+          reservation_id: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          guest_id: string
+          id?: string
+          priority?: string
+          property_id?: string | null
+          request_type: string
+          reservation_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          guest_id?: string
+          id?: string
+          priority?: string
+          property_id?: string | null
+          request_type?: string
+          reservation_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_requests_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_requests_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guests: {
         Row: {
           address: string | null
+          anniversary_date: string | null
+          company_id: string | null
+          consent_call: boolean
+          consent_email: boolean
+          consent_marketing: boolean
+          consent_sms: boolean
+          consent_updated_at: string | null
           created_at: string
           created_by: string | null
+          date_of_birth: string | null
           email: string | null
+          food_preferences: string | null
           full_name: string
           id: string
           id_proof_number: string | null
@@ -1146,15 +1342,25 @@ export type Database = {
           passport_number: string | null
           phone: string | null
           preferences: string | null
+          room_preferences: string | null
           updated_at: string
           visa_expiry: string | null
           visa_number: string | null
         }
         Insert: {
           address?: string | null
+          anniversary_date?: string | null
+          company_id?: string | null
+          consent_call?: boolean
+          consent_email?: boolean
+          consent_marketing?: boolean
+          consent_sms?: boolean
+          consent_updated_at?: string | null
           created_at?: string
           created_by?: string | null
+          date_of_birth?: string | null
           email?: string | null
+          food_preferences?: string | null
           full_name: string
           id?: string
           id_proof_number?: string | null
@@ -1168,15 +1374,25 @@ export type Database = {
           passport_number?: string | null
           phone?: string | null
           preferences?: string | null
+          room_preferences?: string | null
           updated_at?: string
           visa_expiry?: string | null
           visa_number?: string | null
         }
         Update: {
           address?: string | null
+          anniversary_date?: string | null
+          company_id?: string | null
+          consent_call?: boolean
+          consent_email?: boolean
+          consent_marketing?: boolean
+          consent_sms?: boolean
+          consent_updated_at?: string | null
           created_at?: string
           created_by?: string | null
+          date_of_birth?: string | null
           email?: string | null
+          food_preferences?: string | null
           full_name?: string
           id?: string
           id_proof_number?: string | null
@@ -1190,11 +1406,19 @@ export type Database = {
           passport_number?: string | null
           phone?: string | null
           preferences?: string | null
+          room_preferences?: string | null
           updated_at?: string
           visa_expiry?: string | null
           visa_number?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "guests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "guests_created_by_fkey"
             columns: ["created_by"]
@@ -3553,6 +3777,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      compute_loyalty_tier: { Args: { p_points: number }; Returns: string }
       create_journal_entry: {
         Args: {
           p_description: string
@@ -3593,6 +3818,10 @@ export type Database = {
       is_staff_for_transfer: {
         Args: { p_from: string; p_to: string }
         Returns: boolean
+      }
+      merge_guest_profiles: {
+        Args: { p_source_guest_id: string; p_target_guest_id: string }
+        Returns: undefined
       }
       move_reservation: {
         Args: {
