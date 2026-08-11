@@ -39,6 +39,19 @@ export async function createBanquetPackageTemplate(formData: FormData) {
   revalidatePath("/organization/templates");
 }
 
+export async function createMenuItemTemplate(formData: FormData) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.from("corporate_menu_item_templates").insert({
+    category_template_id: (formData.get("category_template_id") as string) || null,
+    name: String(formData.get("name")),
+    price: Number(formData.get("price") ?? 0),
+    is_veg: formData.get("is_veg") === "on",
+    description: (formData.get("description") as string) || null,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/organization/templates");
+}
+
 // ---------- Property side: adopt a template into a property-scoped row ----------
 // Adopting copies the template's current values in as a normal editable row
 // (tagged with template_id for lineage) — it's a one-time starting point,
@@ -85,6 +98,30 @@ export async function adoptMenuCategoryTemplate(formData: FormData) {
     template_id: templateId,
     name: template.name,
     sort_order: template.sort_order,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/restaurant/menu");
+}
+
+export async function adoptMenuItemTemplate(formData: FormData) {
+  const { supabase } = await requireUser();
+  const templateId = String(formData.get("template_id"));
+  const categoryId = String(formData.get("category_id"));
+
+  const { data: template, error: templateError } = await supabase
+    .from("corporate_menu_item_templates")
+    .select("name, price, is_veg, description")
+    .eq("id", templateId)
+    .single();
+  if (templateError) throw new Error(templateError.message);
+
+  const { error } = await supabase.from("menu_items").insert({
+    category_id: categoryId,
+    template_id: templateId,
+    name: template.name,
+    price: template.price,
+    is_veg: template.is_veg,
+    description: template.description,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/restaurant/menu");

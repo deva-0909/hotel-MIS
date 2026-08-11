@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
-import { addOrderItem } from "@/app/actions/restaurant";
 import { formatMoney } from "@/lib/format-money";
-import { Card, CardHeader, Badge, Select, Input, Label, EmptyState } from "@/components/ui";
-import { SubmitButton } from "@/components/submit-button";
+import { isWithinMealPeriod } from "@/lib/meal-periods";
+import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { OrderLifecycleActions, RemoveItemButton } from "./order-actions";
+import { AddItemForm } from "./add-item-form";
+import { UpsellPrompt } from "./upsell-prompt";
 
 const STATUS_COLOR: Record<string, "green" | "blue" | "amber" | "gray" | "red" | "purple"> = {
   open: "gray",
@@ -33,22 +34,85 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   if (!order) notFound();
 
   const { data: restaurants } = await supabase.from("restaurants").select("id").eq("property_id", org.propertyId);
-  const { data: categories } = await supabase
-    .from("menu_categories")
-    .select("id")
-    .in("restaurant_id", (restaurants ?? []).map((r) => r.id));
+  const restaurantIds = (restaurants ?? []).map((r) => r.id);
+  const { data: categories } = await supabase.from("menu_categories").select("id").in("restaurant_id", restaurantIds);
   const categoryIds = (categories ?? []).map((c) => c.id);
 
-  const [{ data: items }, { data: menuItems }] = await Promise.all([
+  const [{ data: items }, { data: rawMenuItems }, { data: combos }] = await Promise.all([
     supabase
       .from("order_items")
-      .select("id, quantity, unit_price, status, menu_items(name)")
+      .select(
+        "id, quantity, unit_price, status, menu_item_id, menu_items(name), menu_item_variants(name), menu_combos(name), order_item_modifiers(modifier_name, price_delta)",
+      )
       .eq("order_id", id)
       .order("created_at"),
     categoryIds.length
-      ? supabase.from("menu_items").select("id, name, price").eq("is_available", true).in("category_id", categoryIds).order("name")
+      ? supabase
+          .from("menu_items")
+          .select(
+            "id, name, price, parcel_price, own_delivery_price, aggregator_price, category_id, meal_periods(start_time, end_time, days_of_week, is_active), menu_item_variants(id, name, price_delta, is_default)",
+          )
+          .eq("is_available", true)
+          .in("category_id", categoryIds)
+          .order("name")
+      : Promise.resolve({ data: [] }),
+    restaurantIds.length
+      ? supabase.from("menu_combos").select("id, name, price").eq("is_available", true).in("restaurant_id", restaurantIds).order("name")
       : Promise.resolve({ data: [] }),
   ]);
+
+  // Meal-period filtering happens here rather than in the query itself —
+  // "is this item orderable right now" depends on the property's current
+  // wall-clock time/day, which isn't expressible as a plain column filter.
+  const availableMenuItems = (rawMenuItems ?? []).filter(
+    (mi) => !mi.meal_periods || isWithinMealPeriod(mi.meal_periods, org.timezone),
+  );
+  const menuItemIds = availableMenuItems.map((mi) => mi.id);
+
+  const [{ data: modifierGroups }, { data: upsells }] = await Promise.all([
+    menuItemIds.length
+      ? supabase
+          .from("menu_modifier_groups")
+          .select("id, name, selection_type, is_required, menu_item_id, category_id, menu_modifiers(id, name, price_delta)")
+          .or(`menu_item_id.in.(${menuItemIds.join(",")}),category_id.in.(${categoryIds.join(",") || "00000000-0000-0000-0000-000000000000"})`)
+      : Promise.resolve({ data: [] }),
+    menuItemIds.length
+      ? supabase
+          .from("menu_item_upsells")
+          .select("menu_item_id, menu_items!menu_item_upsells_suggested_item_id_fkey(id, name, price)")
+          .in("menu_item_id", menuItemIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const groupsByItem = new Map<string, typeof modifierGroups>();
+  const groupsByCategory = new Map<string, typeof modifierGroups>();
+  for (const g of modifierGroups ?? []) {
+    if (g.menu_item_id) groupsByItem.set(g.menu_item_id, [...(groupsByItem.get(g.menu_item_id) ?? []), g]);
+    if (g.category_id) groupsByCategory.set(g.category_id, [...(groupsByCategory.get(g.category_id) ?? []), g]);
+  }
+
+  const formItems = availableMenuItems.map((mi) => ({
+    id: mi.id,
+    name: mi.name,
+    price: mi.price,
+    parcel_price: mi.parcel_price,
+    own_delivery_price: mi.own_delivery_price,
+    aggregator_price: mi.aggregator_price,
+    variants: (mi.menu_item_variants ?? []).map((v) => ({ id: v.id, name: v.name, price_delta: Number(v.price_delta), is_default: v.is_default })),
+    modifierGroups: [...(groupsByItem.get(mi.id) ?? []), ...(groupsByCategory.get(mi.category_id) ?? [])].map((g) => ({
+      id: g.id,
+      name: g.name,
+      selection_type: g.selection_type as "single" | "multiple",
+      is_required: g.is_required,
+      modifiers: (g.menu_modifiers ?? []).map((m) => ({ id: m.id, name: m.name, price_delta: Number(m.price_delta) })),
+    })),
+  }));
+
+  const itemIdsInOrder = new Set((items ?? []).map((i) => i.menu_item_id).filter((v): v is string => v != null));
+  const suggestions = (upsells ?? [])
+    .filter((u) => itemIdsInOrder.has(u.menu_item_id) && u.menu_items && !itemIdsInOrder.has(u.menu_items.id))
+    .map((u) => u.menu_items!)
+    .filter((s, idx, arr) => arr.findIndex((x) => x.id === s.id) === idx);
 
   const total = items?.filter((i) => i.status !== "cancelled").reduce((sum, i) => sum + i.quantity * i.unit_price, 0) ?? 0;
 
@@ -94,7 +158,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id} className="border-b border-gray-50 last:border-0">
-                    <td className="px-5 py-2.5 text-gray-800">{item.menu_items?.name}</td>
+                    <td className="px-5 py-2.5 text-gray-800">
+                      {item.menu_items?.name ?? item.menu_combos?.name}
+                      {item.menu_item_variants && <span className="text-xs text-gray-400"> · {item.menu_item_variants.name}</span>}
+                      {!!item.order_item_modifiers?.length && (
+                        <div className="text-xs text-gray-400">{item.order_item_modifiers.map((m) => m.modifier_name).join(", ")}</div>
+                      )}
+                    </td>
                     <td className="px-5 py-2.5 text-gray-600">{item.quantity}</td>
                     <td className="px-5 py-2.5 text-gray-600">{formatMoney(item.quantity * item.unit_price, org.currency)}</td>
                     <td className="px-5 py-2.5 capitalize text-gray-500">{item.status}</td>
@@ -109,25 +179,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </table>
           )}
 
+          {order.status === "open" && !!suggestions.length && (
+            <UpsellPrompt orderId={order.id} suggestions={suggestions} currency={org.currency} />
+          )}
+
           {order.status === "open" && (
-            <form action={addOrderItem.bind(null, order.id)} className="flex items-end gap-2 border-t border-gray-100 px-5 py-4">
-              <div className="flex-1">
-                <Label>Menu item</Label>
-                <Select name="menu_item_id" required>
-                  <option value="">Select item…</option>
-                  {menuItems?.map((mi) => (
-                    <option key={mi.id} value={mi.id}>
-                      {mi.name} — {formatMoney(mi.price, org.currency)}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="w-24">
-                <Label>Qty</Label>
-                <Input name="quantity" type="number" min={1} defaultValue={1} />
-              </div>
-              <SubmitButton variant="secondary">Add</SubmitButton>
-            </form>
+            <AddItemForm orderId={order.id} orderType={order.order_type} items={formItems} combos={combos ?? []} currency={org.currency} />
           )}
         </Card>
 

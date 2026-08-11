@@ -24,7 +24,7 @@ export function OrderForm({
   reservations: Reservation[];
   homePropertyId: string;
 }) {
-  const [orderType, setOrderType] = useState<"dine_in" | "room_service" | "takeaway">("dine_in");
+  const [orderType, setOrderType] = useState<"dine_in" | "room_service" | "takeaway" | "delivery_own" | "delivery_aggregator">("dine_in");
 
   const homeReservations = reservations.filter((r) => r.property_id === homePropertyId);
   const visitingByProperty = new Map<string, Reservation[]>();
@@ -45,7 +45,9 @@ export function OrderForm({
           <Select name="order_type" value={orderType} onChange={(e) => setOrderType(e.target.value as typeof orderType)}>
             <option value="dine_in">Dine-in</option>
             <option value="room_service">Room service</option>
-            <option value="takeaway">Takeaway</option>
+            <option value="takeaway">Takeaway / parcel</option>
+            <option value="delivery_own">Delivery — own staff</option>
+            <option value="delivery_aggregator">Delivery — aggregator (Zomato/Swiggy)</option>
           </Select>
         </div>
 

@@ -1,19 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org-context";
-import { createBanquetPackageTemplate, createMenuCategoryTemplate, createRoomTypeTemplate } from "@/app/actions/templates";
+import { createBanquetPackageTemplate, createMenuCategoryTemplate, createMenuItemTemplate, createRoomTypeTemplate } from "@/app/actions/templates";
 import { formatMoney } from "@/lib/format-money";
-import { Card, CardHeader, Breadcrumb, Input, Label, EmptyState } from "@/components/ui";
+import { Card, CardHeader, Breadcrumb, Input, Label, Select, EmptyState } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 
 export default async function CorporateTemplatesPage() {
   const supabase = await createClient();
   const org = await getOrgContext();
 
-  const [{ data: roomTypeTemplates }, { data: menuCategoryTemplates }, { data: banquetPackageTemplates }] = await Promise.all([
-    supabase.from("corporate_room_type_templates").select("id, name, base_rate, max_occupancy").order("name"),
-    supabase.from("corporate_menu_category_templates").select("id, name, sort_order").order("sort_order"),
-    supabase.from("corporate_banquet_package_templates").select("id, name, price_per_cover").order("name"),
-  ]);
+  const [{ data: roomTypeTemplates }, { data: menuCategoryTemplates }, { data: banquetPackageTemplates }, { data: menuItemTemplates }] =
+    await Promise.all([
+      supabase.from("corporate_room_type_templates").select("id, name, base_rate, max_occupancy").order("name"),
+      supabase.from("corporate_menu_category_templates").select("id, name, sort_order").order("sort_order"),
+      supabase.from("corporate_banquet_package_templates").select("id, name, price_per_cover").order("name"),
+      supabase.from("corporate_menu_item_templates").select("id, name, price, is_veg").order("name"),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -117,6 +119,54 @@ export default async function CorporateTemplatesPage() {
             <div>
               <Label>Price / cover</Label>
               <Input name="price_per_cover" type="number" min={0} step="0.01" required />
+            </div>
+            <SubmitButton variant="secondary">Add template</SubmitButton>
+          </form>
+        </Card>
+
+        <Card>
+          <CardHeader title="Menu item templates" />
+          {!menuItemTemplates?.length ? (
+            <EmptyState>No menu item templates yet.</EmptyState>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {menuItemTemplates.map((t) => (
+                <div key={t.id} className="flex items-center justify-between px-5 py-2 text-sm">
+                  <span className="text-gray-700">
+                    <span className={`mr-2 inline-block h-2 w-2 rounded-full ${t.is_veg ? "bg-emerald-500" : "bg-red-500"}`} />
+                    {t.name}
+                  </span>
+                  <span className="text-gray-500">{formatMoney(t.price, org.currency)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <form action={createMenuItemTemplate} className="space-y-2 border-t border-gray-100 px-5 py-4">
+            <div>
+              <Label>Name</Label>
+              <Input name="name" required placeholder="e.g. Butter Chicken" />
+            </div>
+            <div>
+              <Label>Category template (optional)</Label>
+              <Select name="category_template_id" defaultValue="">
+                <option value="">—</option>
+                {menuCategoryTemplates?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>Price</Label>
+              <Input name="price" type="number" min={0} step="0.01" required />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" name="is_veg" defaultChecked /> Vegetarian
+            </label>
+            <div>
+              <Label>Description</Label>
+              <Input name="description" />
             </div>
             <SubmitButton variant="secondary">Add template</SubmitButton>
           </form>
